@@ -1,0 +1,10 @@
+<h2>Upload ảnh để chatbot xử lý</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="image">
+    <button type="submit">Upload</button>
+</form>
+
+{% if response %}
+    <p>Kết quả: {{ response }}</p>
+{% endif %}
