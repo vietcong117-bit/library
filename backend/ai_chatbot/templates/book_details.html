@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="book-details-page">
+    <a class="back-link" href="{% url 'books' %}">← Quay lại</a>
+
+        <div class="book-detail-container">
+            <div class="book-left">
+                {% if book.image %}
+            <img src="{{ book.image.url }}" alt="{{ book.title }}">
+                {% else %}
+            <div class="placeholder-cover">📘</div>
+                {% endif %}
+        </div>
+
+        <div class="book-right">
+            <div class="meta-row">
+                <h1>{{ book.title }}</h1>
+                <div class="meta-sub">by <strong>{{ book.author }}</strong> · {{ book.published_year }}</div>
+            </div>
+
+            <div class="tag-row">
+                <span class="badge badge-category">{{ book.get_category_display }}</span>
+                {% if book.available and book.available > 0 %}
+                    <span class="badge availability in">Còn {{ book.available }}</span>
+                {% else %}
+                    <span class="badge availability out">Hết sách</span>
+                {% endif %}
+                <span class="badge created">Thêm: {{ book.created_at|date:"Y-m-d" }}</span>
+            </div>
+
+            <div class="action-buttons">
+                <form method="post" action="{% url 'book_borrow' book.id %}">
+                    {% csrf_token %}
+                    {% if book.available and book.available > 0 %}
+                        <button class="btn btn-primary">Mượn sách</button>
+                    {% else %}
+                        <button class="btn" disabled>Không thể mượn</button>
+                    {% endif %}
+                </form>
+
+                <form method="post" action="{% url 'book_favorite' book.id %}" class="favorite-form" data-book-id="{{ book.id }}">
+                    {% csrf_token %}
+                    {% if is_favorite %}
+                        <button class="btn btn-outline favorite-btn">Bỏ thích ❤️</button>
+                    {% else %}
+                        <button class="btn btn-ghost favorite-btn">Yêu thích ❤️</button>
+                    {% endif %}
+                </form>
+
+                <button class="btn btn-muted" id="copy-link">Chia sẻ</button>
+            </div>
+
+            <div class="book-stats">
+                <div><strong>Tổng:</strong> {{ book.quantity }} bản</div>
+                <div><strong>Còn:</strong> {{ book.available }} bản</div>
+            </div>
+
+            <hr>
+
+            <div class="description">
+                <h3>Mô tả</h3>
+                <p>{{ book.description|linebreaks }}</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.getElementById('copy-link')?.addEventListener('click', function(){
+    const url = window.location.href;
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(()=> alert('Đã sao chép liên kết'));
+});
+</script>
+
+{% endblock %}

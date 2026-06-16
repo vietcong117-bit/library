@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Sách yêu thích</h2>
+
+<div class="favorites">
+<div class="books-grid">
+	{% for f in favs %}
+		<a href="{% url 'book_detail' f.book.id %}" class="book-link">
+			<div class="book-card">
+			<img class="borrowed-item-img" 
+				src="{% if b.book.image %}{{ b.book.image.url }}{% else %}https://via.placeholder.com/80x110{% endif %}" alt="{{ b.book.title }}">				
+	 			<div class="book-card-content">
+					<h3 class="book-card-title">{{ f.book.title }}</h3>
+					<p class="book-card-author">{{ f.book.author }}</p>
+					<div class="book-card-footer">
+						<form method="post" action="{% url 'book_favorite' f.book.id %}" class="favorite-form" data-book-id="{{ f.book.id }}">
+							{% csrf_token %}
+							<button class="btn btn-secondary favorite-btn">Bỏ thích</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</a>
+	{% empty %}
+		<p>Bạn chưa có sách yêu thích nào.</p>
+	{% endfor %}
+	</div>
+</div>
+
+{% endblock %}
+
