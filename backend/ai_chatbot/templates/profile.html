@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:720px; margin:24px auto;">
+    <h2>Thông tin tài khoản</h2>
+    
+    <div style="background:#f9f9f9; padding:20px; border-radius:8px; margin-top:20px;">
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>First Name:</strong> {{ user.first_name|default:"(chưa cập nhật)" }}</p>
+        <p><strong>Last Name:</strong> {{ user.last_name|default:"(chưa cập nhật)" }}</p>
+        <p><strong>Joined:</strong> {{ user.date_joined|date:"d/m/Y H:i" }}</p>
+        <p><strong>Last Login:</strong> 
+            {% if user.last_login %}
+                {{ user.last_login|date:"d/m/Y H:i" }}
+            {% else %}
+                (chưa đăng nhập)
+            {% endif %}
+        </p>
+    </div>
+
+    <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:20px;">
+        <a href="{% url 'profile_edit' %}" class="btn btn-primary">Chỉnh sửa profile</a>
+        <a href="{% url 'change_password' %}" class="btn btn-secondary">Đổi mật khẩu</a>
+        <a href="{% url 'order_history' %}" class="btn-link">Xem lịch sử đơn hàng</a>
+        <a href="{% url 'borrowed' %}" class="btn-link">Xem lịch sử mượn</a>
+    </div>
+</div>
+{% endblock %}

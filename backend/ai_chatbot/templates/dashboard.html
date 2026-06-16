@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-grid">
+<div class="dashboard-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:16px;">
     <div class="stat-card">
         <div class="stat-icon blue"></div>
         <div class="stat-info">
             <p>Books</p>
-            <div class="stat-value">1,248</div>
+            <div class="stat-value">{{ total_books }}</div>
         </div>
     </div>
 
@@ -14,7 +14,7 @@
         <div class="stat-icon green"></div>
         <div class="stat-info">
             <p>Borrowed</p>
-            <div class="stat-value">312</div>
+            <div class="stat-value">{{ borrowed_count }}</div>
         </div>
     </div>
 
@@ -22,7 +22,7 @@
         <div class="stat-icon orange"></div>
         <div class="stat-info">
             <p>Favorites</p>
-            <div class="stat-value">98</div>
+            <div class="stat-value">{{ favorites_count }}</div>
         </div>
     </div>
 
@@ -30,7 +30,23 @@
         <div class="stat-icon purple"></div>
         <div class="stat-info">
             <p>Active Users</p>
-            <div class="stat-value">1,024</div>
+            <div class="stat-value">{{ active_users }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon teal"></div>
+        <div class="stat-info">
+            <p>Orders</p>
+            <div class="stat-value">{{ total_orders }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon red"></div>
+        <div class="stat-info">
+            <p>Due Soon</p>
+            <div class="stat-value">{{ due_soon_count }}</div>
         </div>
     </div>
 </div>
@@ -39,38 +55,32 @@
     <div class="dashboard-card">
         <h3>Recently Added Books</h3>
         <div class="book-list-compact">
+            {% for book in recent_books %}
             <div class="book-item-compact">
-                <img src="https://images.unsplash.com/photo-1777622488430-3a3873212441?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="">
+                {% if book.image %}
+                <img src="{{ book.image.url }}" alt="">
+                {% else %}
+                <img src="https://picsum.photos/80/110?random={{ forloop.counter }}" alt="">
+                {% endif %}
                 <div>
-                    <p class="title">The Pragmatic Programmer</p>
-                    <p class="author">Andrew Hunt</p>
+                    <p class="title">{{ book.title }}</p>
+                    <p class="author">{{ book.author }}</p>
                 </div>
             </div>
-
-            <div class="book-item-compact">
-                <img src="https://images.unsplash.com/photo-1755018237674-2407f21f2b97?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="">
-                <div>
-                    <p class="title">Clean Code</p>
-                    <p class="author">Robert C. Martin</p>
-                </div>
-            </div>
-
-            <div class="book-item-compact">
-                <img src="https://images.unsplash.com/photo-1781520422835-abbbc12802da?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="">
-                <div>
-                    <p class="title">Design Patterns</p>
-                    <p class="author">Gamma et al.</p>
-                </div>
-            </div>
+            {% empty %}
+            <p>Không có sách mới.</p>
+            {% endfor %}
         </div>
     </div>
 
     <div class="dashboard-card">
         <h3>Top Borrowed</h3>
         <div class="ranking-list">
-            <div class="ranking-item"><div class="rank">1</div><div class="title">1984</div><div class="count">120</div></div>
-            <div class="ranking-item"><div class="rank">2</div><div class="title">Sapiens</div><div class="count">98</div></div>
-            <div class="ranking-item"><div class="rank">3</div><div class="title">Atomic Habits</div><div class="count">85</div></div>
+            {% for item in top_borrowed %}
+            <div class="ranking-item"><div class="rank">{{ forloop.counter }}</div><div class="title">{{ item.title }}</div><div class="count">{{ item.count }}</div></div>
+            {% empty %}
+            <p>Chưa có dữ liệu mượn.</p>
+            {% endfor %}
         </div>
     </div>
 </div>
