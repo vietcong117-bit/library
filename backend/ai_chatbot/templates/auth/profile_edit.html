@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:720px; margin:24px auto;">
+    <h2>Chỉnh sửa thông tin cá nhân</h2>
+
+    <form method="post" style="background:#fff; padding:20px; border-radius:10px; border:1px solid #e0e0e0;">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        <a href="{% url 'profile' %}" class="btn-link" style="margin-left:12px;">Hủy</a>
+    </form>
+</div>
+{% endblock %}
