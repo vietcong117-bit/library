@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot Thư Viện</title>
+</head>
+<body style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
+
+    <h2>🤖 Trợ lý Thư Viện AI</h2>
+    <p>Hãy tải ảnh bìa truyện lên đây để mình tìm sách trong kho nhé!</p>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="anh_upload" accept="image/*" required>
+        <button type="submit" style="padding: 10px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            Gửi cho Bot
+        </button>
+    </form>
+
+    <br><br>
+
+    {% if chu_doc_duoc %}
+        <div style="margin-top: 20px; padding: 25px; background-color: #f9f9f9; display: inline-block; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: left; max-width: 500px;">
+            <p style="color: gray; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                <i>* Bot đọc được chữ từ ảnh: "{{ chu_doc_duoc }}"</i>
+            </p>
+            
+            {% if truyen %}
+                <h3 style="color: #2e7d32; text-align: center;">🎉 Đã tìm thấy truyện trong thư viện!</h3>
+                <div style="border: 2px solid #4CAF50; padding: 20px; background-color: white; border-radius: 8px;">
+                    <h2 style="margin-top: 0; color: #333; text-align: center;">{{ truyen.ten_truyen }}</h2>
+                    <p><b>Tác giả:</b> {{ truyen.tac_gia }}</p>
+                    
+                    {% if truyen.the_loai %}
+                        <p><b>Thể loại:</b> {{ truyen.the_loai }}</p>
+                    {% endif %}
+                    
+                    <p><b>Số lượng còn:</b> <span style="color: red; font-weight: bold; font-size: 18px;">{{ truyen.so_luong }}</span> quyển</p>
+                    
+                    {% if truyen.anh_bia %}
+                        <div style="text-align: center; margin-top: 15px;">
+                            <img src="{{ truyen.anh_bia.url }}" style="max-width: 100%; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <h3 style="color: #c62828; text-align: center;">❌ Rất tiếc, thư viện không có cuốn này!</h3>
+            {% endif %}
+        </div>
+    {% endif %}
+
+</body>
+</html>
