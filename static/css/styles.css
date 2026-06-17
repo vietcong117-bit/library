@@ -567,6 +567,30 @@ body.dark-mode .book-card-footer {
   padding: 2px 6px;
   border-radius: 4px;
 }
+
+/* Chatbot Button */
+.chat-btn {
+    position: fixed; bottom: 20px; right: 20px;
+    width: 60px; height: 60px;
+    background: #6366f1; color: white;
+    border-radius: 50%; border: none; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    font-size: 24px; z-index: 9999;
+    transition: transform 0.2s;
+}
+
+/* Chat Popup */
+.chat-popup {
+    display: none; position: fixed; bottom: 90px; right: 20px;
+    width: 350px; height: 450px; background: white;
+    border-radius: 15px; border: 1px solid #e2e8f0;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+    z-index: 9998; flex-direction: column; overflow: hidden;
+}
+
+.chat-header { background: #6366f1; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+.chat-messages { flex: 1; padding: 15px; overflow-y: auto; background: #f8fafc; }
+.chat-input-area { padding: 10px; border-top: 1px solid #e2e8f0; display: flex; }
 .status-active { background: #dcfce7; color: #166534; } 
 
 .status-available {
