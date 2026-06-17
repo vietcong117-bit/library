@@ -45,4 +45,14 @@
         {% endif %}
     </div>
 </div>
+
+<div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin-top: 0; color: #92400e;">Yêu cầu mượn sách mới</h3>
+    {% if pending_borrows %}
+        <p>Hiện có <strong>{{ pending_borrows.count }}</strong> yêu cầu đang chờ duyệt.</p>
+        <a href="{% url 'admin_borrow_requests' %}" style="display: inline-block; background: #d97706; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">Duyệt ngay</a>
+    {% else %}
+        <p>Không có yêu cầu nào mới.</p>
+    {% endif %}
+</div>
 {% endblock %}

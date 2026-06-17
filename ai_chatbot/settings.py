@@ -120,3 +120,11 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 # Cấu hình Media files (Ảnh, tài liệu do admin/user upload lên)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Cấu hình Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'vietcong117@gmail.com'  # Email của bạn
+EMAIL_HOST_PASSWORD = 'xhwh tozr vuim bihm' # MẬT KHẨU ỨNG DỤNG (Không phải mật khẩu đăng nhập gmail)

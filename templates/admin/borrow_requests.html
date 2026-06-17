@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 40px auto;">
+    <h2>Danh sách yêu cầu mượn sách chờ duyệt</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e2e8f0; text-align: left;">
+                <th style="padding: 12px;">Người dùng</th>
+                <th style="padding: 12px;">Sách</th>
+                <th style="padding: 12px;">Ngày yêu cầu</th>
+                <th style="padding: 12px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for borrow in borrows %}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 12px;">{{ borrow.user.username }}</td>
+                <td style="padding: 12px;">{{ borrow.book.title }}</td>
+                <td style="padding: 12px;">{{ borrow.borrow_date }}</td>
+                <td style="padding: 12px;">
+                    <form method="post" action="{% url 'admin_approve_borrow' borrow.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary" style="padding: 5px 10px;">Duyệt</button>
+                    </form>
+                    <form method="post" action="{% url 'admin_reject_borrow' borrow.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline" style="padding: 5px 10px; color: red;">Từ chối</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="padding: 20px;">Không có yêu cầu nào đang chờ.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="report-section">
+    <h3>Yêu cầu mượn sách chờ duyệt</h3>
+    {% if pending_borrows %}
+        <ul>
+            {% for b in pending_borrows %}
+                <li>{{ b.user.username }} muốn mượn: <strong>{{ b.book.title }}</strong> 
+                    <a href="{% url 'admin_borrow_requests' %}">Đi đến duyệt</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Không có yêu cầu chờ duyệt nào.</p>
+    {% endif %}
+</div>
+{% endblock %}

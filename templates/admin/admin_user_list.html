@@ -1,38 +1,59 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="max-width:960px; margin:24px auto;">
-    <h2>Quản lý Tài khoản (Admin)</h2>
-    <table style="width:100%; border-collapse:collapse">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Is Staff</th>
-                <th>Active</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ user.username }}</td>
-                <td>{{ user.email }}</td>
-                <td>{% if user.is_staff %}✓{% endif %}</td>
-                <td>{% if user.is_active %}✓{% endif %}</td>
-                <td>
-                    <a href="{% url 'admin_user_edit' user.id %}">Sửa</a>
-                    {% if user.id != request.user.id %}
-                    | <a href="{% url 'admin_user_delete' user.id %}">Xóa</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6">Không có tài khoản.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div style="max-width: 1000px; margin: 24px auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 class="section-title">Quản lý Tài khoản</h2>
+        <a href="#" class="btn btn-primary">Thêm tài khoản mới</a>
+    </div>
+
+    <div class="dashboard-card" style="padding: 0; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <th style="padding: 16px;">#</th>
+                    <th style="padding: 16px;">Username</th>
+                    <th style="padding: 16px;">Email</th>
+                    <th style="padding: 16px;">Vai trò</th>
+                    <th style="padding: 16px;">Trạng thái</th>
+                    <th style="padding: 16px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 16px;">{{ forloop.counter }}</td>
+                    <td style="padding: 16px;">{{ user.username }}</td>
+                    <td style="padding: 16px;">{{ user.email|default:"Chưa có" }}</td>
+                    
+                    <td style="padding: 16px;">
+                        {% if user.is_staff %}
+                            <span style="background: #eef2ff; color: #4338ca; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Staff</span>
+                        {% else %}
+                            <span style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 12px;">User</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td style="padding: 16px;">
+                        {% if user.is_active %}
+                            <span style="color: #166534; font-weight: 600;">● Active</span>
+                        {% else %}
+                            <span style="color: #991b1b; font-weight: 600;">● Inactive</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td style="padding: 16px;">
+                        <a href="{% url 'admin_user_edit' user.id %}" style="margin-right: 10px;">Sửa</a>
+                        {% if user.id != request.user.id %}
+                            <a href="{% url 'admin_user_delete' user.id %}" style="color: red;">Xóa</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="padding: 20px; text-align: center;">Không có tài khoản.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

@@ -2,120 +2,82 @@
 {% load static %}
 
 {% block content %}
-<div class="book-details-page">
-    <a class="back-link" href="{% url 'books' %}">← Quay lại</a>
+<div class="book-details-page" style="max-width: 1000px; margin: 40px auto; padding: 0 20px;">
+    <a href="{% url 'books' %}" style="text-decoration: none; color: #64748b; margin-bottom: 20px; display: inline-block;">← Quay lại danh sách</a>
 
-        <div class="book-detail-container">
-            <div class="book-left">
-                {% if book.image %}
-            <img src="{{ book.image.url }}" alt="{{ book.title }}">
-                {% else %}
-            <div class="placeholder-cover">📘</div>
-                {% endif %}
+    <div class="book-detail-container" style="display: grid; grid-template-columns: 350px 1fr; gap: 40px; background: white; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        
+        <div class="book-left">
+            {% if book.image %}
+                <img src="{{ book.image.url }}" alt="{{ book.title }}" style="width: 100%; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+            {% else %}
+                <div style="width: 100%; height: 450px; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 64px; border-radius: 8px;">📘</div>
+            {% endif %}
         </div>
 
         <div class="book-right">
-            <div class="meta-row">
-                <h1>{{ book.title }}</h1>
-                <div class="meta-sub">by <strong>{{ book.author }}</strong> · {{ book.published_year }}</div>
-            </div>
+            <h1 style="font-size: 32px; margin: 0 0 8px 0;">{{ book.title }}</h1>
+            <p style="color: #64748b; margin-bottom: 20px;">Tác giả: <strong>{{ book.author }}</strong> · Năm: {{ book.published_year }}</p>
 
-            <div class="tag-row">
-                <span class="badge badge-category">{{ book.get_category_display }}</span>
-                {% if book.available and book.available > 0 %}
-                    <span class="badge availability in">Còn {{ book.available }}</span>
+            <div style="margin-bottom: 24px;">
+                <span class="badge" style="background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 13px;">{{ book.get_category_display }}</span>
+                {% if book.available > 0 %}
+                    <span class="badge" style="background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 20px; font-size: 13px;">Còn {{ book.available }} cuốn</span>
                 {% else %}
-                    <span class="badge availability out">Hết sách</span>
+                    <span class="badge" style="background: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 20px; font-size: 13px;">Tạm hết sách</span>
                 {% endif %}
-                <span class="badge created">Thêm: {{ book.created_at|date:"Y-m-d" }}</span>
             </div>
 
-            <div class="action-buttons">
+            <div class="action-buttons" style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;">
                 <form method="post" action="{% url 'book_borrow' book.id %}">
                     {% csrf_token %}
-                    {% if book.available and book.available > 0 %}
-                        <button class="btn btn-primary">Mượn sách</button>
-                    {% else %}
-                        <button class="btn" disabled>Không thể mượn</button>
-                    {% endif %}
+                    <button class="btn btn-primary" {% if book.available <= 0 %}disabled{% endif %}>Mượn ngay</button>
                 </form>
-
                 <form method="post" action="{% url 'add_to_cart' book.id %}">
                     {% csrf_token %}
-                    {% if book.available and book.available > 0 %}
-                        <button class="btn btn-primary">Thêm vào giỏ 🛒</button>
-                    {% else %}
-                        <button class="btn" disabled>Hết sách</button>
-                    {% endif %}
+                    <button class="btn btn-outline" {% if book.available <= 0 %}disabled{% endif %}>🛒 Giỏ hàng</button>
                 </form>
-
-                <form method="post" action="{% url 'book_favorite' book.id %}" class="favorite-form" data-book-id="{{ book.id }}">
+                <form method="post" action="{% url 'book_favorite' book.id %}" class="favorite-form">
                     {% csrf_token %}
-                    {% if is_favorite %}
-                        <button class="btn btn-outline favorite-btn">Bỏ thích ❤️</button>
-                    {% else %}
-                        <button class="btn btn-ghost favorite-btn">Yêu thích ❤️</button>
-                    {% endif %}
+                    <button class="btn btn-ghost favorite-btn">{{ is_favorite|yesno:"Bỏ thích ❤️,Yêu thích ❤️" }}</button>
                 </form>
-
-                <button class="btn btn-muted" id="copy-link">Chia sẻ</button>
             </div>
-
-            <div class="book-stats">
-                <div><strong>Tổng:</strong> {{ book.quantity }} bản</div>
-                <div><strong>Còn:</strong> {{ book.available }} bản</div>
-            </div>
-
-            <hr>
 
             <div class="description">
-                <h3>Mô tả</h3>
-                <p>{{ book.description|linebreaks }}</p>
-            </div>
-
-            <hr>
-            <div class="reviews-section">
-                <h3>Đánh giá sách</h3>
-                {% if average_rating %}
-                    <p>Điểm trung bình: <strong>{{ average_rating|floatformat:1 }}/5</strong></p>
-                {% endif %}
-                {% if reviews %}
-                    <div class="review-list">
-                        {% for review in reviews %}
-                            <div class="review-item" style="border:1px solid #eee; padding:12px; border-radius:8px; margin-bottom:12px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                    <strong>{{ review.user.username }}</strong>
-                                    <span>⭐ {{ review.rating }}/5</span>
-                                </div>
-                                <p style="margin:0; white-space:pre-wrap;">{{ review.comment }}</p>
-                                <small style="color:#666;">{{ review.created_at|date:'Y-m-d H:i' }}</small>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p>Chưa có đánh giá nào cho sách này.</p>
-                {% endif %}
-
-                {% if user.is_authenticated %}
-                    <form method="post" action="{% url 'add_review' book.id %}" style="margin-top:16px;">
-                        {% csrf_token %}
-                        {{ review_form.as_p }}
-                        <button class="btn btn-primary">Gửi đánh giá</button>
-                    </form>
-                {% else %}
-                    <p><a href="{% url 'login' %}">Đăng nhập</a> để đánh giá sách.</p>
-                {% endif %}
+                <h3 style="margin-bottom: 10px;">Mô tả chi tiết</h3>
+                <p style="color: #475569; line-height: 1.6;">{{ book.description|linebreaks }}</p>
             </div>
         </div>
     </div>
 
+    <div class="reviews-section" style="margin-top: 40px; background: white; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <h3 style="margin-bottom: 20px;">Đánh giá của độc giả</h3>
+    
+    {% for review in reviews %}
+        <div style="border-bottom: 1px solid #f1f5f9; padding: 16px 0;">
+            <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                <span>{{ review.user.username }}</span>
+                <span style="color: #fbbf24;">★ {{ review.rating }}/5</span>
+            </div>
+            <p style="margin: 8px 0; color: #475569;">{{ review.comment }}</p>
+        </div>
+    {% empty %}
+        <p style="color: #94a3b8;">Chưa có đánh giá nào.</p>
+    {% endfor %}
+
+    {% if user.is_authenticated %}
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f1f5f9;">
+            <h4>Viết đánh giá của bạn</h4>
+            <form method="post" action="{% url 'add_review' book.id %}">
+                {% csrf_token %} 
+                <div class="form-group" style="margin-bottom: 15px;">
+                    {{ review_form.as_p }}
+                </div>
+                <button type="submit" class="btn btn-primary" style="padding: 10px 20px; cursor: pointer;">Gửi đánh giá</button>
+            </form>
+        </div>
+    {% else %}
+        <p style="margin-top: 20px;"><a href="{% url 'login' %}">Đăng nhập</a> để viết đánh giá.</p>
+    {% endif %}
 </div>
-
-<script>
-document.getElementById('copy-link')?.addEventListener('click', function(){
-    const url = window.location.href;
-    if (navigator.clipboard) navigator.clipboard.writeText(url).then(()=> alert('Đã sao chép liên kết'));
-});
-</script>
-
 {% endblock %}

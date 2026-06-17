@@ -1,37 +1,68 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<div style="max-width:960px; margin:24px auto;">
-    <h2>Quản lý Sách (Admin)</h2>
-    <p><a href="{% url 'admin_book_add' %}">+ Thêm sách mới</a></p>
-    <table style="width:100%; border-collapse:collapse">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Title</th>
-                <th>Author</th>
-                <th>Category</th>
-                <th>Available</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for book in books %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ book.title }}</td>
-                <td>{{ book.author }}</td>
-                <td>{{ book.get_category_display }}</td>
-                <td>{{ book.available }}</td>
-                <td>
-                    <a href="{% url 'admin_book_edit' book.id %}">Sửa</a> |
-                    <a href="{% url 'admin_book_delete' book.id %}">Xóa</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6">Không có sách.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% static 'images/default-book.png' as default_img %}
+
+<div class="admin-container" style="max-width: 1100px; margin: 24px auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 class="section-title">Quản lý Sách</h2>
+        <a href="{% url 'admin_book_add' %}" class="btn btn-primary">+ Thêm sách mới</a>
+    </div>
+
+    <div class="dashboard-card" style="padding: 0; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-light, #e2e8f0);">
+                    <th style="padding: 16px; color: #64748b; font-weight: 600;">Bìa</th>
+                    <th style="padding: 16px; color: #64748b; font-weight: 600;">Tiêu đề</th>
+                    <th style="padding: 16px; color: #64748b; font-weight: 600;">Tác giả</th>
+                    <th style="padding: 16px; color: #64748b; font-weight: 600;">Thể loại</th>
+                    <th style="padding: 16px; color: #64748b; font-weight: 600;">Trạng thái</th>
+                    <th style="padding: 16px; color: #64748b; font-weight: 600;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 12px 16px;">
+                        {% if book.cover_image %}
+                            <img src="{{ book.cover_image.url }}" 
+                                 style="width: 50px; height: 70px; border-radius: 4px; object-fit: cover; border: 1px solid #e2e8f0;"
+                                 onerror="this.onerror=null; this.src='{{ default_img }}';">
+                        {% else %}
+                            <div style="width: 50px; height: 70px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #94a3b8;">N/A</div>
+                        {% endif %}
+                    </td>
+                    
+                    <td style="padding: 16px; font-weight: 600; color: #1e293b;">{{ book.title }}</td>
+                    <td style="padding: 16px; color: #475569;">{{ book.author }}</td>
+                    <td style="padding: 16px; color: #475569;">{{ book.get_category_display }}</td>
+                    
+                    <td style="padding: 16px;">
+                        {% if book.available > 0 %}
+                            <span style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500;">
+                                Còn hàng ({{ book.available }})
+                            </span>
+                        {% else %}
+                            <span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500;">
+                                Hết hàng
+                            </span>
+                        {% endif %}
+                    </td>
+                    
+                    <td style="padding: 16px;">
+                        <a href="{% url 'admin_book_edit' book.id %}" style="color: #2563eb; text-decoration: none; margin-right: 12px; font-weight: 500;">Sửa</a>
+                        <a href="{% url 'admin_book_delete' book.id %}" style="color: #dc2626; text-decoration: none; font-weight: 500;">Xóa</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="padding: 32px; text-align: center; color: #64748b;">Chưa có dữ liệu sách trong hệ thống.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
