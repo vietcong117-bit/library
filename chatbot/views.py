@@ -1,5 +1,4 @@
-# Này xem như là phần xử lí API mà urls.py gọi đến,
-# Nó hay gọi đến phần service để xử lí lấy dữ liệu 
+
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
@@ -18,30 +17,29 @@ from django.dispatch import receiver
 from .models import Book, Favorite, Borrow, UserProfile, Cart, CartItem, Order, OrderItem, Review
 
 
+import os
+import random
+import difflib
+import joblib
+import easyocr
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import FileSystemStorage
 
-# T làm biếng quá nên tự hiểu đi
-# Cho chuối này 🍌
-# Éc éc khẹc khẹc 🐒
 
 def dashboard(request):
     # Tổng số sách
     total_books = Book.objects.count()
 
-    # Số sách đang được mượn (chưa trả)
     borrowed_count = Borrow.objects.filter(return_date__isnull=True).count()
 
-    # Tổng số mục yêu thích
     favorites_count = Favorite.objects.count()
     total_orders = Order.objects.count()
 
-    # Số người dùng active (dùng làm chỉ số sơ bộ)
     active_users = User.objects.filter(is_active=True).count()
     due_soon_count = Borrow.objects.filter(return_date__isnull=True, due_date__lte=timezone.now().date() + timedelta(days=5)).count()
 
-    # Sách mới thêm gần đây
     recent_books = Book.objects.order_by('-created_at')[:5]
 
-    # Top sách được mượn (theo số lần mượn)
     top_borrowed_qs = (
         Borrow.objects.values('book__id', 'book__title')
         .annotate(count=Count('id'))
@@ -105,10 +103,8 @@ def book_borrow(request, book_id):
         return HttpResponseForbidden()
 
     book = get_object_or_404(Book, id=book_id)
-    # Giả sử bạn set hạn mượn là 14 ngày kể từ hôm nay
     due_date = timezone.now().date() + timedelta(days=14)
     
-    # Tạo yêu cầu với status mặc định là 'pending'
     Borrow.objects.create(
         user=request.user,
         book=book,
@@ -241,7 +237,6 @@ def admin_reports(request):
     if not request.user.is_staff:
         return HttpResponseForbidden()
 
-    # Thêm dòng này để lấy danh sách yêu cầu chờ duyệt
     pending_borrows = Borrow.objects.filter(status='pending').select_related('book', 'user')
     
     due_soon = Borrow.objects.filter(return_date__isnull=True, due_date__lte=timezone.now().date() + timedelta(days=5)).select_related('book', 'user')
@@ -249,7 +244,7 @@ def admin_reports(request):
     recent_orders = Order.objects.order_by('-created_at')[:5].prefetch_related('items__book')
 
     return render(request, 'admin/admin_reports.html', {
-        'pending_borrows': pending_borrows, # Truyền biến này ra template
+        'pending_borrows': pending_borrows, 
         'due_soon': due_soon,
         'total_orders': total_orders,
         'recent_orders': recent_orders,
@@ -353,7 +348,6 @@ def admin_borrow_requests(request):
     if not request.user.is_staff:
         return HttpResponseForbidden()
     
-    # Lấy danh sách các yêu cầu đang chờ
     pending_borrows = Borrow.objects.filter(status='pending').select_related('book', 'user')
     return render(request, 'admin/borrow_requests.html', {'borrows': pending_borrows})
 
@@ -369,7 +363,6 @@ def admin_approve_borrow(request, borrow_id):
         borrow.status = 'approved'
         borrow.save()
         
-        # Trừ số lượng sách trong kho
         book.available -= 1
         book.save()
         messages.success(request, f'Đã duyệt yêu cầu của {borrow.user.username}')
@@ -404,7 +397,6 @@ def add_to_cart(request, book_id):
     book = get_object_or_404(Book, id=book_id)
     cart, created = Cart.objects.get_or_create(user=request.user)
     
-    # Add or update item
     cart_item, item_created = CartItem.objects.get_or_create(cart=cart, book=book)
     if not item_created:
         cart_item.quantity += 1
@@ -453,13 +445,11 @@ def profile_view(request):
     return render(request, 'auth/profile.html', {'user': request.user})
 
 
-# --- Authentication views ---
 def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # profile will be created by signal
             login(request, user)
             messages.success(request, 'Đăng ký thành công')
             return redirect('dashboard')
@@ -489,9 +479,78 @@ def logout_view(request):
     return redirect('dashboard')
 
 
-# Create UserProfile automatically
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
         Cart.objects.create(user=instance)
+
+
+reader = easyocr.Reader(['vi', 'en'])
+MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'intent_model.pkl')
+try:
+    intent_model = joblib.load(MODEL_PATH)
+except Exception:
+    print("Cảnh báo: Chưa tìm thấy file intent_model.pkl")
+    intent_model = None
+
+@csrf_exempt
+def api_chat_bot(request):
+    if request.method == 'POST':
+        tin_nhan = request.POST.get('message', '').strip()
+        anh_upload = request.FILES.get('image')
+        
+        bot_reply = "Xin lỗi, mình chưa hiểu ý bạn."
+        anh_url = ""
+        sach_tim_thay = None
+        
+        tat_ca_sach = Book.objects.all()
+        danh_sach_ten = [b.title for b in tat_ca_sach]
+
+        if anh_upload:
+            fss = FileSystemStorage()
+            file_path = fss.save(anh_upload.name, anh_upload)
+            duong_dan_anh = fss.path(file_path)
+            
+            try:
+                results = reader.readtext(duong_dan_anh)
+                chu_doc_duoc = " ".join([chu for (_, chu, _) in results])
+                
+                if chu_doc_duoc.strip():
+                    ket_qua = difflib.get_close_matches(chu_doc_duoc, danh_sach_ten, n=1, cutoff=0.3)
+                    if ket_qua:
+                        sach_tim_thay = Book.objects.get(title=ket_qua[0])
+                        bot_reply = f"Mình nhận diện được cuốn <b>{sach_tim_thay.title}</b>. Hiện còn {sach_tim_thay.available} quyển nhé!"
+                    else:
+                        bot_reply = "Mình đọc được ảnh nhưng sách này chưa có trong kho."
+            except Exception:
+                bot_reply = "Ảnh mờ quá mình không đọc được."
+
+        elif tin_nhan and intent_model:
+            y_dinh = intent_model.predict([tin_nhan.lower()])[0]
+            
+            if y_dinh == "chao_hoi": bot_reply = "Chào bạn! Mình là AI hỗ trợ thư viện đây."
+            elif y_dinh == "tam_biet": bot_reply = "Tạm biệt nha!"
+            elif y_dinh == "cam_on": bot_reply = "Không có gì nè!"
+            elif y_dinh == "hoi_gio_lam": bot_reply = "Thư viện mở từ 7:30 đến 17:00."
+            elif y_dinh == "tim_sach":
+                for sach in tat_ca_sach:
+                    if sach.title.lower() in tin_nhan.lower():
+                        sach_tim_thay = sach
+                        link_chitiet = f"<br><br> <a href='/books/{sach_tim_thay.id}/' style='color: #6366f1; text-decoration: underline; font-weight: bold;'>Nhấn vào đây để mượn sách</a>"
+                        bot_reply = f"Đã thấy! Thư viện có cuốn <b>{sach_tim_thay.title}</b> của {sach_tim_thay.author}. Còn {sach_tim_thay.available} quyển." + link_chitiet
+                        break
+                if not sach_tim_thay:
+                    bot_reply = "Mình không tìm thấy tựa sách này trong kho!"
+
+        if sach_tim_thay and sach_tim_thay.image:
+            anh_url = sach_tim_thay.image.url
+
+        response = JsonResponse({"reply": bot_reply, "image": anh_url})
+        response["Access-Control-Allow-Origin"] = "*" 
+        return response
+
+   
+    fallback_response = JsonResponse({"error": "Chỉ nhận phương thức POST"})
+    fallback_response["Access-Control-Allow-Origin"] = "*"
+    return fallback_response

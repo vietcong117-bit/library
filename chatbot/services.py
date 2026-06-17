@@ -2,6 +2,7 @@
 # Do t nghĩ là chỉ gọi không thì có thể gộp selector.py vào luôn
 # Nhưng t nghĩ nếu có xử lí thêm sau khi gọi nên tách riêng ra cho dễ quản lí
 # còn nếu không thì thôi gộp vào luôn cũng được, tùy mấy bạn
+# nguồn trương hữu an
 
 from .selector import get_all_books
 from .selector import get_book_by_id

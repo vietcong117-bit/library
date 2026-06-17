@@ -1,8 +1,6 @@
-# Chỉ là phần gọi đến model để lấy dữ liệu thôi
 
 from .models import Book
 
-# ở đây t cũng làm biếng giải thích
 
 def get_all_books():
     return Book.objects.all()

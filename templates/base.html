@@ -81,20 +81,24 @@
 <button class="chat-btn" onclick="toggleChat()">💬</button>
 <div id="chat-popup" class="chat-popup">
     <div class="chat-header">
-        <span>Thư viện Bot</span>
-        <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
+        <span> Bot Thư Viện</span>
+        <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;">✕</button>
     </div>
     <div id="chat-box" class="chat-messages">
-        <p style="background: #e2e8f0; padding: 8px; border-radius: 8px; width: fit-content; font-size: 14px;">Chào bạn! Bạn cần giúp gì ạ?</p>
+        <p style="background: #e2e8f0; padding: 10px; border-radius: 8px; width: fit-content; font-size: 14px; margin-top: 0;">Chào bạn! Mình có thể giúp gì cho bạn? Bạn cứ gõ tên sách hoặc gửi ảnh bìa nhé!</p>
     </div>
-    <div class="chat-input-area">
-        <input type="text" id="chat-input" placeholder="Nhập câu hỏi..." style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px;">
-        <button onclick="sendMessage()" style="margin-left: 5px; background: #6366f1; color: white; border:none; padding: 5px 15px; border-radius: 5px; cursor:pointer;">Gửi</button>
+    <div class="chat-input-area" style="align-items: center;">
+        <input type="file" id="chat-image" accept="image/*" style="display: none;">
+        <button onclick="document.getElementById('chat-image').click()" style="background:none; border:none; font-size:20px; cursor:pointer; padding: 0 8px; color: #64748b;">📷</button>
+        
+        <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 20px; outline: none;" onkeypress="if(event.key === 'Enter') sendMessage()">
+        
+        <button onclick="sendMessage()" style="margin-left: 8px; background: #6366f1; color: white; border:none; padding: 8px 16px; border-radius: 20px; cursor:pointer; font-weight: bold;">Gửi</button>
     </div>
 </div>
 
 <script>
-// Scripts cũ của bạn
+// Scripts cũ của bạn (Menu Profile)
 function getCookie(name) {
     const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return v ? v.pop() : '';
@@ -109,30 +113,70 @@ document.addEventListener('click', function(e) {
     if (menu && !isProfileButton && !menu.contains(e.target)) menu.style.display = 'none';
 });
 
-// Script Chatbot
+// Script Chatbot (Đã tích hợp API)
 function toggleChat() {
     const popup = document.getElementById('chat-popup');
     popup.style.display = (popup.style.display === 'flex') ? 'none' : 'flex';
 }
+
 function sendMessage() {
     const input = document.getElementById('chat-input');
+    const imageInput = document.getElementById('chat-image');
     const box = document.getElementById('chat-box');
-    if (!input.value.trim()) return;
-    box.innerHTML += `<div style="text-align: right; margin-bottom: 10px;"><span style="background: #6366f1; color: white; padding: 8px; border-radius: 8px; font-size: 14px;">${input.value}</span></div>`;
     
-    // Giả lập gọi API, bạn đổi '/chatbot/message/' thành URL thực tế
-    fetch('/chatbot/message/', {
+    let text = input.value.trim();
+    let file = imageInput.files[0];
+
+    // Không có gì thì không gửi
+    if (!text && !file) return; 
+
+    // Hiển thị tin nhắn người dùng (gồm chữ hoặc ảnh preview)
+    let userHTML = "";
+    if (file) {
+        userHTML += `<img src="${URL.createObjectURL(file)}" style="max-width: 150px; border-radius: 8px; margin-bottom: 5px;"><br>`;
+    }
+    if (text) {
+        userHTML += text;
+    }
+
+    box.innerHTML += `<div style="text-align: right; margin-bottom: 15px;"><span style="background: #6366f1; color: white; padding: 10px 14px; border-radius: 15px 15px 0 15px; font-size: 14px; display: inline-block; max-width: 80%; text-align: left; line-height: 1.4;">${userHTML}</span></div>`;
+    
+    // Hiện thông báo đang xử lý
+    let loadingId = "loading-" + Date.now();
+    box.innerHTML += `<p id="${loadingId}" style="background: #f1f5f9; padding: 10px; border-radius: 15px 15px 15px 0; width: fit-content; font-size: 14px; font-style: italic; color: #64748b;">Đang tìm kiếm...</p>`;
+    box.scrollTop = box.scrollHeight;
+
+    // Đóng gói dữ liệu chuẩn Form Data gửi cho Backend
+    let formData = new FormData();
+    if (text) formData.append("message", text);
+    if (file) formData.append("image", file);
+
+    // Dọn dẹp ô nhập liệu
+    input.value = '';
+    imageInput.value = '';
+
+    // Gọi API của tớ và cậu đã làm
+    fetch('/api/chat/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify({ message: input.value })
+        body: formData
     })
     .then(r => r.json())
     .then(data => {
-        box.innerHTML += `<p style="background: #e2e8f0; padding: 8px; border-radius: 8px; width: fit-content; font-size: 14px;">${data.reply}</p>`;
+        document.getElementById(loadingId).remove();
+        
+        let botHTML = data.reply;
+        if (data.image) {
+            botHTML += `<br><img src="${data.image}" style="max-width: 120px; border-radius: 5px; margin-top: 8px; border: 1px solid #e2e8f0;">`;
+        }
+
+        box.innerHTML += `<div style="margin-bottom: 15px;"><p style="background: #e2e8f0; padding: 10px 14px; border-radius: 15px 15px 15px 0; width: fit-content; max-width: 80%; font-size: 14px; margin: 0; line-height: 1.5; color: #1e293b;">${botHTML}</p></div>`;
+        box.scrollTop = box.scrollHeight;
+    })
+    .catch(error => {
+        document.getElementById(loadingId).remove();
+        box.innerHTML += `<p style="background: #fee2e2; color: #ef4444; padding: 10px; border-radius: 15px; width: fit-content; font-size: 14px;">❌ Lỗi kết nối đến Trợ lý AI!</p>`;
         box.scrollTop = box.scrollHeight;
     });
-    input.value = '';
-    box.scrollTop = box.scrollHeight;
 }
 </script>
 </body>
