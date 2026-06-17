@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:960px; margin:24px auto;">
+    <h2>Quản lý Tài khoản (Admin)</h2>
+    <table style="width:100%; border-collapse:collapse">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Is Staff</th>
+                <th>Active</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{% if user.is_staff %}✓{% endif %}</td>
+                <td>{% if user.is_active %}✓{% endif %}</td>
+                <td>
+                    <a href="{% url 'admin_user_edit' user.id %}">Sửa</a>
+                    {% if user.id != request.user.id %}
+                    | <a href="{% url 'admin_user_delete' user.id %}">Xóa</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">Không có tài khoản.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:960px; margin:24px auto;">
+    <h2>Quản lý Sách (Admin)</h2>
+    <p><a href="{% url 'admin_book_add' %}">+ Thêm sách mới</a></p>
+    <table style="width:100%; border-collapse:collapse">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Category</th>
+                <th>Available</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for book in books %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ book.title }}</td>
+                <td>{{ book.author }}</td>
+                <td>{{ book.get_category_display }}</td>
+                <td>{{ book.available }}</td>
+                <td>
+                    <a href="{% url 'admin_book_edit' book.id %}">Sửa</a> |
+                    <a href="{% url 'admin_book_delete' book.id %}">Xóa</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">Không có sách.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

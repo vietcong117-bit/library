@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Sách đã mượn</h2>
+
+<div class="borrowed-list">
+	{% for b in borrows %}
+	<div class="borrowed-item">
+		<div class="borrowed-item-info">
+		<img class="borrowed-item-img" 
+			src="{% if b.book.image %}{{ b.book.image.url }}{% else %}https://via.placeholder.com/80x110{% endif %}" alt="{{ b.book.title }}">			
+			<div class="borrowed-item-details">
+				<h4>{{ b.book.title }}</h4>
+				<p>{{ b.book.author }}</p>
+				<p>Ngày mượn: {{ b.borrow_date }}</p>
+				<p>Hạn trả: {{ b.due_date }}</p>
+				{% if b.return_date %}
+					<p>Đã trả: {{ b.return_date }}</p>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="borrowed-due">
+			{% if not b.return_date %}
+				<span class="due-date">{{ b.due_date }}</span>
+			{% else %}
+				<span>Đã trả</span>
+			{% endif %}
+		</div>
+	</div>
+	{% empty %}
+	<p>Bạn chưa mượn cuốn sách nào.</p>
+	{% endfor %}
+</div>
+
+{% endblock %}
+
