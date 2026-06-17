@@ -1,5 +1,8 @@
 # Tương tự như việc gom các Endpoint của một Controller cụ thể trong Spring Boot
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
@@ -31,6 +34,10 @@ urlpatterns = [
     path("staff/books/<int:book_id>/edit/", views.admin_book_edit, name='admin_book_edit'),
     path("staff/books/<int:book_id>/delete/", views.admin_book_delete, name='admin_book_delete'),
     path("staff/reports/", views.admin_reports, name='admin_reports'),
+    path("staff/borrow-requests/", views.admin_borrow_requests, name='admin_borrow_requests'),
+    path('staff/borrows/', views.admin_borrow_requests, name='admin_borrow_requests'),
+    path('staff/borrows/<int:borrow_id>/approve/', views.admin_approve_borrow, name='admin_approve_borrow'),
+    path('staff/borrows/<int:borrow_id>/reject/', views.admin_reject_borrow, name='admin_reject_borrow'),
 
     path("books/", views.books, name="books"),
     path("books/<int:book_id>/", views.book_details, name="book_detail"),
@@ -40,4 +47,11 @@ urlpatterns = [
     path("books/search/", views.book_search, name="book_search"),
     path("borrowed/", views.borrowed, name="borrowed"),
     path("favorites/", views.favorites, name="favorites"),
+    
+    path('password-reset/', auth_views.PasswordResetView.as_view(template_name='auth/password_reset.html'), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='auth/password_reset_done.html'), name='password_reset_done'),
+    path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='auth/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(template_name='auth/password_reset_complete.html'), name='password_reset_complete'),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,13 +1,42 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="max-width:720px; margin:24px auto;">
-    <h2>Chỉnh sửa tài khoản: {{ user.username }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn">Lưu</button>
-        <a href="{% url 'admin_user_list' %}" class="btn-link">Hủy</a>
-    </form>
+<div class="admin-container" style="max-width: 600px; margin: 24px auto;">
+    <div style="margin-bottom: 24px;">
+        <h2 class="section-title">Chỉnh sửa: {{ user.username }}</h2>
+    </div>
+
+    <div class="dashboard-card">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                        {{ field.label }}
+                    </label>
+                    
+                    {# Logic: Không cho phép đổi quyền Admin nếu là chính mình #}
+                    {% if user.id == request.user.id and field.name == 'is_staff' %}
+                        <div style="padding: 8px; background: #f1f5f9; border-radius: 8px; font-size: 13px;">
+                            Bạn không thể thay đổi quyền quản trị của chính mình.
+                        </div>
+                        <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+
+                    {% if field.errors %}
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 4px;">{{ field.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div style="margin-top: 24px; display: flex; gap: 12px;">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <a href="{% url 'admin_user_list' %}" class="btn btn-ghost">Hủy</a>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

@@ -353,10 +353,10 @@ body.dark-mode .stat-info p {
 }
 
 .dashboard-card {
-  background: var(--card-light);
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  padding: 20px;
+  background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 body.dark-mode .dashboard-card {
@@ -567,11 +567,10 @@ body.dark-mode .book-card-footer {
   padding: 2px 6px;
   border-radius: 4px;
 }
+.status-active { background: #dcfce7; color: #166534; } 
 
 .status-available {
-  background: #dcfce7;
-  color: #166534;
-}
+background: #dcfce7; color: #166534;}
 
 body.dark-mode .status-available {
   background: rgba(16, 185, 129, 0.1);
@@ -579,8 +578,7 @@ body.dark-mode .status-available {
 }
 
 .status-borrowed {
-  background: #fecaca;
-  color: #991b1b;
+  background: #fee2e2; color: #991b1b;
 }
 
 body.dark-mode .status-borrowed {
@@ -791,7 +789,10 @@ body.dark-mode .borrowed-item-details p {
 .meta-row h1 { margin: 0; font-size: 32px; line-height: 1.1 }
 .meta-sub { color: #64748b; margin-top: 6px }
 .tag-row { margin-top: 12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap }
-.badge { padding:6px 10px; border-radius:999px; font-size:13px; background: #f1f5f9; color:#0f172a }
+.badge { padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;}
 body.dark-mode .badge { background:#334155; color:var(--text-dark) }
 .badge-category { background: linear-gradient(90deg,#6366f1,#06b6d4); color: white }
 .badge.availability.in { background: #dcfce7; color:#166534 }

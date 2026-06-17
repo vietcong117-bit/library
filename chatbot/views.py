@@ -104,13 +104,20 @@ def book_borrow(request, book_id):
     if request.method != 'POST':
         return HttpResponseForbidden()
 
-    success, msg = borrow_book(request.user, book_id)
-    if success:
-        messages.success(request, msg)
-        return redirect('borrowed')
-    else:
-        messages.error(request, msg)
-        return redirect('book_detail', book_id=book_id)
+    book = get_object_or_404(Book, id=book_id)
+    # Giả sử bạn set hạn mượn là 14 ngày kể từ hôm nay
+    due_date = timezone.now().date() + timedelta(days=14)
+    
+    # Tạo yêu cầu với status mặc định là 'pending'
+    Borrow.objects.create(
+        user=request.user,
+        book=book,
+        due_date=due_date,
+        status='pending' 
+    )
+    
+    messages.success(request, "Đã gửi yêu cầu mượn sách, vui lòng chờ Admin duyệt.")
+    return redirect('borrowed')
 
 
 @login_required
@@ -234,11 +241,15 @@ def admin_reports(request):
     if not request.user.is_staff:
         return HttpResponseForbidden()
 
+    # Thêm dòng này để lấy danh sách yêu cầu chờ duyệt
+    pending_borrows = Borrow.objects.filter(status='pending').select_related('book', 'user')
+    
     due_soon = Borrow.objects.filter(return_date__isnull=True, due_date__lte=timezone.now().date() + timedelta(days=5)).select_related('book', 'user')
     total_orders = Order.objects.count()
     recent_orders = Order.objects.order_by('-created_at')[:5].prefetch_related('items__book')
 
     return render(request, 'admin/admin_reports.html', {
+        'pending_borrows': pending_borrows, # Truyền biến này ra template
         'due_soon': due_soon,
         'total_orders': total_orders,
         'recent_orders': recent_orders,
@@ -336,6 +347,47 @@ def admin_book_delete(request, book_id):
         messages.success(request, 'Đã xóa sách')
         return redirect('admin_book_list')
     return render(request, 'admin/book_confirm_delete.html', {'book': book})
+
+@login_required
+def admin_borrow_requests(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden()
+    
+    # Lấy danh sách các yêu cầu đang chờ
+    pending_borrows = Borrow.objects.filter(status='pending').select_related('book', 'user')
+    return render(request, 'admin/borrow_requests.html', {'borrows': pending_borrows})
+
+@login_required
+def admin_approve_borrow(request, borrow_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden()
+    
+    borrow = get_object_or_404(Borrow, id=borrow_id)
+    book = borrow.book
+    
+    if book.available > 0:
+        borrow.status = 'approved'
+        borrow.save()
+        
+        # Trừ số lượng sách trong kho
+        book.available -= 1
+        book.save()
+        messages.success(request, f'Đã duyệt yêu cầu của {borrow.user.username}')
+    else:
+        messages.error(request, 'Sách đã hết, không thể duyệt!')
+        
+    return redirect('admin_borrow_requests')
+
+@login_required
+def admin_reject_borrow(request, borrow_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden()
+    
+    borrow = get_object_or_404(Borrow, id=borrow_id)
+    borrow.status = 'rejected'
+    borrow.save()
+    messages.info(request, 'Đã từ chối yêu cầu mượn.')
+    return redirect('admin_borrow_requests')
 
 
 @login_required

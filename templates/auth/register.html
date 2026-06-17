@@ -1,13 +1,48 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="max-width:480px; margin:24px auto;">
-    <h2>Đăng ký</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn">Đăng ký</button>
-    </form>
-    <p>Đã có tài khoản? <a href="{% url 'login' %}">Đăng nhập</a></p>
+<div class="register-container" style="max-width: 400px; margin: 40px auto; padding: 0 20px;">
+    <div class="dashboard-card" style="padding: 32px;">
+        <form method="post" novalidate> {% csrf_token %}
+            
+            {% for field in form %}
+                <div style="margin-bottom: 20px; position: relative;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                        {{ field.label }}
+                    </label>
+                    
+                    <div style="position: relative;">
+                        {{ field }}
+                        {% if field.name == 'password' %}
+                            <span onclick="togglePassword()" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">👁️</span>
+                        {% endif %}
+                    </div>
+
+                    {% if field.errors %}
+                        <div style="color: #ef4444; font-size: 13px; margin-top: 6px;">
+                            {% if field.errors.0 == "This field is required." %}
+                                Bạn bắt buộc phải điền đầy đủ thông tin này!
+                            {% else %}
+                                {{ field.errors.0 }}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Đăng ký</button>
+        </form>
+    </div>
 </div>
+
+<script>
+function togglePassword() {
+    const passwordField = document.querySelector('input[name="password"]');
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+    } else {
+        passwordField.type = "password";
+    }
+}
+</script>
 {% endblock %}

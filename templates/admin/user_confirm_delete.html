@@ -1,13 +1,29 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="max-width:480px; margin:24px auto;">
-    <h2>Xác nhận xóa tài khoản</h2>
-    <p>Bạn có chắc muốn xóa tài khoản <strong>{{ user.username }}</strong> không?</p>
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Xóa</button>
-        <a href="{% url 'admin_user_list' %}">Hủy</a>
-    </form>
+<div class="admin-container" style="max-width: 500px; margin: 48px auto; padding: 0 20px;">
+    
+    <div class="dashboard-card" style="padding: 32px; border-top: 4px solid #ef4444; text-align: center;">
+        
+        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+        
+        <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Xác nhận xóa tài khoản</h2>
+        
+        <p style="color: #475569; margin-bottom: 24px;">
+            Bạn có chắc chắn muốn xóa tài khoản <strong>{{ user.username }}</strong>? 
+            <br>
+            Hành động này sẽ xóa vĩnh viễn người dùng và <strong>không thể khôi phục</strong>.
+        </p>
+
+        <form method="post" style="display: flex; gap: 12px; justify-content: center;">
+            {% csrf_token %}
+            
+            <a href="{% url 'admin_user_list' %}" class="btn btn-ghost">Hủy</a>
+            
+            <button type="submit" class="btn" style="background-color: #ef4444; color: white; border: none;">
+                Xác nhận xóa
+            </button>
+        </form>
+    </div>
 </div>
 {% endblock %}

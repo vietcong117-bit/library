@@ -38,6 +38,11 @@ class Book(models.Model):
         return self.title
 
 class Borrow(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Đang chờ duyệt'),
+        ('approved', 'Đã duyệt'),
+        ('rejected', 'Từ chối'),
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
@@ -50,6 +55,7 @@ class Borrow(models.Model):
         null=True,
         blank=True
     )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     def __str__(self):
         return f"{self.user.username} - {self.book.title}"
