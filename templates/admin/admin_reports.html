@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:960px; margin:24px auto;">
+    <h2>Báo cáo Admin</h2>
+
+    <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:16px; margin-bottom:24px;">
+        <div style="background:#fff; padding:20px; border-radius:10px; border:1px solid #e0e0e0;">
+            <h3>Tổng đơn hàng</h3>
+            <p style="font-size:32px; margin:0;">{{ total_orders }}</p>
+        </div>
+        <div style="background:#fff; padding:20px; border-radius:10px; border:1px solid #e0e0e0;">
+            <h3>Sách đến hạn trả</h3>
+            <p style="font-size:32px; margin:0;">{{ due_soon|length }}</p>
+        </div>
+    </div>
+
+    <div style="background:#fff; padding:20px; border-radius:10px; border:1px solid #e0e0e0; margin-bottom:24px;">
+        <h3>Đơn hàng mới</h3>
+        {% if recent_orders %}
+            <ul style="margin:0; padding-left:18px;">
+                {% for order in recent_orders %}
+                    <li style="margin-bottom:10px;">
+                        <strong>#{{ order.id }}</strong> - {{ order.user.username }} - {{ order.get_status_display }} - {{ order.created_at|date:'d/m/Y H:i' }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Chưa có đơn hàng mới.</p>
+        {% endif %}
+    </div>
+
+    <div style="background:#fff; padding:20px; border-radius:10px; border:1px solid #e0e0e0;">
+        <h3>Sách cần chú ý</h3>
+        {% if due_soon %}
+            <ul style="margin:0; padding-left:18px;">
+                {% for borrow in due_soon %}
+                    <li style="margin-bottom:10px;">
+                        {{ borrow.book.title }} - {{ borrow.user.username }} - hạn trả: {{ borrow.due_date|date:'d/m/Y' }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Không có sách chuẩn bị quá hạn.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin-top: 0; color: #92400e;">Yêu cầu mượn sách mới</h3>
+    {% if pending_borrows %}
+        <p>Hiện có <strong>{{ pending_borrows.count }}</strong> yêu cầu đang chờ duyệt.</p>
+        <a href="{% url 'admin_borrow_requests' %}" style="display: inline-block; background: #d97706; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">Duyệt ngay</a>
+    {% else %}
+        <p>Không có yêu cầu nào mới.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="admin-container" style="max-width: 700px; margin: 24px auto; padding: 0 20px;">
+    <div style="margin-bottom: 24px;">
+        <h2 class="section-title">{{ action }}</h2>
+    </div>
+
+    <div class="dashboard-card" style="padding: 32px;">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--text-main);">
+                        {{ field.label }}
+                    </label>
+                    
+                    <div style="width: 100%;">
+                        {{ field }}
+                    </div>
+
+                    {% if field.help_text %}
+                        <small style="display: block; color: var(--text-muted); margin-top: 6px; font-size: 12px; line-height: 1.4;">
+                            {{ field.help_text }}
+                        </small>
+                    {% endif %}
+                    
+                    {% if field.errors %}
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500;">{{ field.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div style="margin-top: 32px; display: flex; gap: 12px; align-items: center;">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <a href="{% url 'admin_book_list' %}" class="btn btn-ghost">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

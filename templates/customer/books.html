@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<form class="search-form" action="{% url 'books' %}" method="get">
+    <select name="category">
+        <option value="">Tất cả thể loại</option>
+        <option value="tech" {% if category == 'tech' %}selected{% endif %}>Công nghệ</option>
+        <option value="fiction" {% if category == 'fiction' %}selected{% endif %}>Văn học</option>
+        <option value="selfhelp" {% if category == 'selfhelp' %}selected{% endif %}>Tự phát triển</option>
+        <option value="business" {% if category == 'business' %}selected{% endif %}>Kinh doanh</option>
+    </select>
+
+    <select name="available">
+        <option value="">Tất cả</option>
+        <option value="true" {% if available == 'true' %}selected{% endif %}>Còn sách</option>
+        <option value="false" {% if available == 'false' %}selected{% endif %}>Hết sách</option>
+    </select>
+
+    <select name="sort">
+        <option value="">Sắp xếp</option>
+        <option value="title" {% if sort == 'title' %}selected{% endif %}>Tiêu đề A→Z</option>
+        <option value="-title" {% if sort == '-title' %}selected{% endif %}>Tiêu đề Z→A</option>
+        <option value="author" {% if sort == 'author' %}selected{% endif %}>Tác giả A→Z</option>
+        <option value="-author" {% if sort == '-author' %}selected{% endif %}>Tác giả Z→A</option>
+        <option value="year" {% if sort == 'year' %}selected{% endif %}>Năm tăng dần</option>
+        <option value="-year" {% if sort == '-year' %}selected{% endif %}>Năm giảm dần</option>
+        <option value="available" {% if sort == 'available' %}selected{% endif %}>Còn nhiều → ít</option>
+        <option value="-available" {% if sort == '-available' %}selected{% endif %}>Ít → nhiều</option>
+    </select>
+
+    <button type="submit">Lọc</button>
+</form>
+
+<div class="books-grid">
+
+    {% for book in books %}
+    <a href="{% url 'book_detail' book.id %}" class="book-link">
+
+        <div class="book-card">
+
+           <img class="book-card-image"
+                src="{% if book.image %}{{ book.image.url }}{% else %}https://via.placeholder.com/200x300{% endif %}" alt="{{ book.title }}">
+            <div class="book-card-content">
+
+                <h3 class="book-card-title">{{ book.title }}</h3>
+                <p class="book-card-author">{{ book.author }}</p>
+
+                <div class="book-card-footer">
+
+                    {% if book.available > 0 %}
+                        <span class="book-status status-available">Còn sách</span>
+                    {% else %}
+                        <span class="book-status status-borrowed">Hết sách</span>
+                    {% endif %}
+
+                    <div class="book-actions">
+                        <button class="btn-heart">❤️</button>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </a>
+    {% endfor %}
+
+</div>
+{% endblock %}
