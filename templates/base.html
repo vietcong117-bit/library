@@ -4,23 +4,24 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title>Library</title>
-
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        /* CSS cho Chatbot */
+        .chat-btn { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: #6366f1; color: white; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); font-size: 24px; z-index: 9999; transition: transform 0.2s; }
+        .chat-popup { display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; height: 450px; background: white; border-radius: 15px; border: 1px solid #e2e8f0; box-shadow: 0 5px 25px rgba(0,0,0,0.15); z-index: 9998; flex-direction: column; overflow: hidden; animation: fadeIn 0.3s; }
+        .chat-header { background: #6366f1; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; background: #f8fafc; }
+        .chat-input-area { padding: 10px; border-top: 1px solid #e2e8f0; display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 
 <body>
 
 <div class="app-container">
-
-    <!-- SIDEBAR -->
     <aside class="sidebar">
-
-        <div class="sidebar-header">
-            <h1 class="logo">📚 Library</h1>
-        </div>
-
+        <div class="sidebar-header"><h1 class="logo">📚 Library</h1></div>
         <nav class="sidebar-nav">
             <a class="nav-item" href="{% url 'books' %}">📖 Books</a>
             <a class="nav-item" href="{% url 'borrowed' %}">📥 Borrowed</a>
@@ -34,26 +35,16 @@
             <a class="nav-item" href="{% url 'admin_reports' %}">📊 Reports</a>
             {% endif %}
         </nav>
-
-        <div class="sidebar-footer">
-            <button class="btn-icon">🌙</button>
-        </div>
-
+        <div class="sidebar-footer"><button class="btn-icon">🌙</button></div>
     </aside>
 
-    <!-- MAIN -->
     <main class="main-content">
-
         <header class="header">
-            <div class="header-left">
-                <h2 class="section-title">Library System</h2>
-            </div>
-
+            <div class="header-left"><h2 class="section-title">Library System</h2></div>
             <div class="header-right">
                 <form class="search-box" action="{% url 'book_search' %}" method="get">
                     <input type="text" name="title" placeholder="Search books...">
                 </form>
-
                 <div class="user-profile" style="position:relative; display:flex; align-items:center; gap:8px;">
                     {% if user.is_authenticated %}
                     <button onclick="toggleProfileMenu()" style="background:none; border:none; cursor:pointer; font-size:28px; padding:8px 12px;">👤</button>
@@ -84,96 +75,65 @@
         <section class="section active">
             {% block content %}{% endblock %}
         </section>
-
     </main>
+</div>
 
+<button class="chat-btn" onclick="toggleChat()">💬</button>
+<div id="chat-popup" class="chat-popup">
+    <div class="chat-header">
+        <span>Thư viện Bot</span>
+        <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
+    </div>
+    <div id="chat-box" class="chat-messages">
+        <p style="background: #e2e8f0; padding: 8px; border-radius: 8px; width: fit-content; font-size: 14px;">Chào bạn! Bạn cần giúp gì ạ?</p>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Nhập câu hỏi..." style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px;">
+        <button onclick="sendMessage()" style="margin-left: 5px; background: #6366f1; color: white; border:none; padding: 5px 15px; border-radius: 5px; cursor:pointer;">Gửi</button>
+    </div>
 </div>
 
 <script>
-// When header search is submitted, copy category/available/sort selects from page
-document.addEventListener('DOMContentLoaded', function(){
-    const headerForm = document.querySelector('form.search-box');
-    if (!headerForm) return;
-
-    headerForm.addEventListener('submit', function(e){
-        // remove previously added hidden inputs
-        headerForm.querySelectorAll('.injected-param').forEach(n => n.remove());
-
-        ['category','available','sort'].forEach(name => {
-            const el = document.querySelector(`[name="${name}"]`);
-            if (el && el.value) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = name;
-                input.value = el.value;
-                input.className = 'injected-param';
-                headerForm.appendChild(input);
-            }
-        });
-    });
-});
-</script>
-
-<script>
-// CSRF helper
+// Scripts cũ của bạn
 function getCookie(name) {
     const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return v ? v.pop() : '';
 }
-
-document.addEventListener('submit', function(e){
-    const form = e.target;
-    if (!form.classList.contains('favorite-form')) return;
-    e.preventDefault();
-
-    const url = form.action;
-    const btn = form.querySelector('.favorite-btn');
-    const csrftoken = getCookie('csrftoken');
-
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: new URLSearchParams(new FormData(form))
-    })
-    .then(resp => resp.json())
-    .then(data => {
-        if (data.is_favorite) {
-            if (btn) { btn.textContent = 'Bỏ thích ❤️'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-outline'); }
-        } else {
-            if (btn) { btn.textContent = 'Yêu thích ❤️'; btn.classList.remove('btn-outline'); btn.classList.add('btn-ghost'); }
-            // if we're on favorites list, remove the card
-            const card = form.closest('.book-link') || form.closest('.book-card');
-            if (card && document.querySelector('.favorites')) {
-                card.remove();
-            }
-        }
-    }).catch(err => {
-        console.error('Favorite toggle failed', err);
-    });
-});
-</script>
-
-<script>
-// Profile dropdown toggle - simple global function
 function toggleProfileMenu() {
     const menu = document.getElementById('profileMenu');
-    if (menu) {
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-    }
+    if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
-
-// Close dropdown when clicking outside
 document.addEventListener('click', function(e) {
     const menu = document.getElementById('profileMenu');
     const isProfileButton = e.target.closest('button[onclick*="toggleProfileMenu"]');
-    if (menu && !isProfileButton && !menu.contains(e.target)) {
-        menu.style.display = 'none';
-    }
+    if (menu && !isProfileButton && !menu.contains(e.target)) menu.style.display = 'none';
 });
-</script>
 
+// Script Chatbot
+function toggleChat() {
+    const popup = document.getElementById('chat-popup');
+    popup.style.display = (popup.style.display === 'flex') ? 'none' : 'flex';
+}
+function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const box = document.getElementById('chat-box');
+    if (!input.value.trim()) return;
+    box.innerHTML += `<div style="text-align: right; margin-bottom: 10px;"><span style="background: #6366f1; color: white; padding: 8px; border-radius: 8px; font-size: 14px;">${input.value}</span></div>`;
+    
+    // Giả lập gọi API, bạn đổi '/chatbot/message/' thành URL thực tế
+    fetch('/chatbot/message/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ message: input.value })
+    })
+    .then(r => r.json())
+    .then(data => {
+        box.innerHTML += `<p style="background: #e2e8f0; padding: 8px; border-radius: 8px; width: fit-content; font-size: 14px;">${data.reply}</p>`;
+        box.scrollTop = box.scrollHeight;
+    });
+    input.value = '';
+    box.scrollTop = box.scrollHeight;
+}
+</script>
 </body>
 </html>
