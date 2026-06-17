@@ -35,19 +35,4 @@
         </tbody>
     </table>
 </div>
-
-<div class="report-section">
-    <h3>Yêu cầu mượn sách chờ duyệt</h3>
-    {% if pending_borrows %}
-        <ul>
-            {% for b in pending_borrows %}
-                <li>{{ b.user.username }} muốn mượn: <strong>{{ b.book.title }}</strong> 
-                    <a href="{% url 'admin_borrow_requests' %}">Đi đến duyệt</a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Không có yêu cầu chờ duyệt nào.</p>
-    {% endif %}
-</div>
 {% endblock %}

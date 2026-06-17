@@ -1,3 +1,4 @@
+*tạo tài khoản admin đăng nhập django admin (có dùng ko v?) - apollo**
 import os
 import django
 

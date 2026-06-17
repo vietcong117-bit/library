@@ -1,3 +1,4 @@
+/* sau này sắp xếp lại - apollo */
 :root {
   --primary: #3b82f6;
   --primary-dark: #1e40af;
@@ -974,3 +975,4 @@ body.dark-mode .book-author, body.dark-mode .book-year, body.dark-mode .book-cat
 body.dark-mode .btn-ghost { color: var(--text-dark); border-color: var(--border-dark) }
 body.dark-mode .btn-muted { background: var(--card-dark); color: var(--text-dark); border-color: var(--border-dark) }
 .description { margin-top:18px }
+

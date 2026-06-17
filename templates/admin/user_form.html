@@ -6,37 +6,74 @@
         <h2 class="section-title">Chỉnh sửa: {{ user.username }}</h2>
     </div>
 
-    <div class="dashboard-card">
-        <form method="post">
+    <div class="dashboard-card" style="padding: 24px; background: white; border-radius: 16px; border: 1px solid #e2e8f0;">
+        <form method="post" novalidate>
             {% csrf_token %}
             
+            {# PHẦN CHỈNH SỬA THÔNG TIN #}
             {% for field in form %}
                 <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
-                        {{ field.label }}
-                    </label>
-                    
-                    {# Logic: Không cho phép đổi quyền Admin nếu là chính mình #}
-                    {% if user.id == request.user.id and field.name == 'is_staff' %}
-                        <div style="padding: 8px; background: #f1f5f9; border-radius: 8px; font-size: 13px;">
-                            Bạn không thể thay đổi quyền quản trị của chính mình.
-                        </div>
-                        <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                        <label class="toggle-container" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                            {% if user.id == request.user.id and field.name == 'is_staff' %}
+                                <div class="toggle-switch" style="width: 50px; height: 26px; background-color: #e2e8f0; border-radius: 20px; cursor: not-allowed;"></div>
+                                <span style="font-weight: 600; color: #94a3b8; font-size: 14px;">{{ field.label }} (Không thể đổi)</span>
+                            {% else %}
+                                <input type="checkbox" name="{{ field.name }}" class="toggle-checkbox" 
+                                       {% if field.value %}checked{% endif %} style="display: none;">
+                                <div class="toggle-switch" style="width: 50px; height: 26px; background-color: #cbd5e1; border-radius: 20px; position: relative; transition: 0.3s;">
+                                    <div class="toggle-indicator" style="position: absolute; width: 22px; height: 22px; background-color: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s;"></div>
+                                </div>
+                                <span style="font-weight: 600; color: #334155; font-size: 14px;">{{ field.label }}</span>
+                                <span class="status-text" style="font-size: 12px; font-weight: bold; margin-left: auto;"></span>
+                            {% endif %}
+                        </label>
                     {% else %}
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">{{ field.label }}</label>
                         {{ field }}
                     {% endif %}
 
                     {% if field.errors %}
-                        <div style="color: #ef4444; font-size: 12px; margin-top: 4px;">{{ field.errors.0 }}</div>
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 4px;">Vui lòng kiểm tra lại thông tin này.</div>
                     {% endif %}
                 </div>
             {% endfor %}
 
-            <div style="margin-top: 24px; display: flex; gap: 12px;">
-                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-                <a href="{% url 'admin_user_list' %}" class="btn btn-ghost">Hủy</a>
+    {% for field in pwd_form %}
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #334155;">
+                {{ field.label }}
+            </label>
+            <input type="password" name="{{ field.name }}" 
+                   style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px;">
+            
+            {% if field.errors %}
+                <div style="color: #ef4444; font-size: 12px; margin-top: 4px;">{{ field.errors.0 }}</div>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+            <div style="margin-top: 32px; display: flex; gap: 12px;">
+                <button type="submit" class="btn btn-primary" style="background: #4f46e5; color: white; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer;">Lưu thay đổi</button>
+                <a href="{% url 'admin_user_list' %}" class="btn btn-ghost" style="padding: 10px 20px; color: #64748b; text-decoration: none;">Hủy</a>
             </div>
         </form>
     </div>
 </div>
+
+<style>
+    /* Toggle Switch Styles */
+    .toggle-checkbox:checked + .toggle-switch { background-color: #4f46e5; }
+    .toggle-checkbox:checked + .toggle-switch .toggle-indicator { transform: translateX(24px); }
+    
+    /* Logic hiện chữ On/Off */
+    .toggle-checkbox:checked ~ .status-text::before { content: 'On'; color: #4f46e5; }
+    .toggle-checkbox:not(:checked) ~ .status-text::before { content: 'Off'; color: #64748b; }
+
+    /* Input Styles */
+    input[type="text"], input[type="email"] {
+        width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;
+    }
+</style>
 {% endblock %}

@@ -1,4 +1,4 @@
-
+# truy vấn
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
@@ -15,6 +15,11 @@ from .forms import RegisterForm, BookForm, UserEditForm, ProfileEditForm, Review
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import Book, Favorite, Borrow, UserProfile, Cart, CartItem, Order, OrderItem, Review
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import render, redirect
+from .forms import AdminAddUserForm
+from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth import authenticate, login
 
 
 import os
@@ -24,8 +29,14 @@ import joblib
 import easyocr
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+from django.http import JsonResponse
+
+intent_model = None
 
 
+
+@login_required
 def dashboard(request):
     # Tổng số sách
     total_books = Book.objects.count()
@@ -148,6 +159,7 @@ def book_search(request):
     books = search_books_by_title(title, category=category, available=available_bool, sort=sort)
     return render(request, "customer/book_search.html", {"books": books, "title": title, "category": category, "available": available, "sort": sort})
 
+@login_required
 def borrowed(request):
     if not request.user.is_authenticated:
         return redirect('books')
@@ -155,6 +167,7 @@ def borrowed(request):
     borrows = get_user_borrows(request.user)
     return render(request, "customer/borrowed.html", {"borrows": borrows})
 
+@login_required
 def favorites(request):
     if not request.user.is_authenticated:
         return redirect('books')
@@ -185,7 +198,7 @@ def checkout(request):
 
     return render(request, 'customer/checkout.html', {'cart': cart, 'total': cart.get_total_price()})
 
-@login_required
+@login_required(login_url='login')
 def order_history(request):
     orders = Order.objects.filter(user=request.user).prefetch_related('items__book').order_by('-created_at')
     return render(request, 'customer/order_history.html', {'orders': orders})
@@ -266,17 +279,36 @@ def admin_user_list(request):
 def admin_user_edit(request, user_id):
     if not request.user.is_staff:
         return HttpResponseForbidden()
+        
     user = get_object_or_404(User, id=user_id)
+    
     if request.method == 'POST':
         form = UserEditForm(request.POST, instance=user)
+        # Khởi tạo SetPasswordForm với dữ liệu POST
+        pwd_form = SetPasswordForm(user, request.POST)
+        
+        # Kiểm tra: nếu form chính hợp lệ VÀ (mật khẩu trống HOẶC mật khẩu hợp lệ)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Đã cập nhật tài khoản')
-            return redirect('admin_user_list')
+            # Kiểm tra xem có dữ liệu mật khẩu được gửi lên không
+            if request.POST.get('new_password1') or request.POST.get('new_password2'):
+                if pwd_form.is_valid():
+                    pwd_form.save()
+                    form.save()
+                    messages.success(request, 'Đã cập nhật tài khoản và mật khẩu!')
+                    return redirect('admin_user_list')
+            else:
+                form.save()
+                messages.success(request, 'Đã cập nhật tài khoản!')
+                return redirect('admin_user_list')
     else:
         form = UserEditForm(instance=user)
-    return render(request, 'admin/user_form.html', {'form': form, 'user': user})
-
+        pwd_form = SetPasswordForm(user)
+        
+    return render(request, 'admin/user_form.html', {
+        'form': form, 
+        'pwd_form': pwd_form, 
+        'user': user
+    })
 
 @login_required
 def admin_user_delete(request, user_id):
@@ -458,18 +490,28 @@ def register_view(request):
 
     return render(request, 'auth/register.html', {'form': form})
 
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.forms import AuthenticationForm
+
+from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            messages.success(request, 'Đăng nhập thành công')
+            login(request, form.get_user())
             return redirect('dashboard')
+        else:
+            # Ép tất cả các lỗi về chung một thông báo
+            if not request.POST.get('username') or not request.POST.get('password'):
+                form.add_error(None, "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.")
+            else:
+                form.add_error(None, "Tên đăng nhập hoặc mật khẩu không chính xác.")
     else:
         form = AuthenticationForm()
-
     return render(request, 'auth/login.html', {'form': form})
 
 
@@ -484,7 +526,36 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
         Cart.objects.create(user=instance)
+@staff_member_required
+def admin_user_list(request):
+    users = User.objects.all()
+    # TRUYỀN 'users' (số nhiều) ĐỂ KHÔNG ĐÈ BIẾN 'user' CỦA DÙNG CHUNG
+    return render(request, 'admin/admin_user_list.html', {'users': users})
+    
+@staff_member_required
+def add_new_user(request):
+    if request.method == 'POST':
+        form = AdminAddUserForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.is_staff = form.cleaned_data['is_staff']
+            user.save()
+            return redirect('admin_user_list')
+    else:
+        form = AdminAddUserForm()
+    return render(request, 'admin/add_user.html', {'form': form})
 
+@staff_member_required
+def admin_change_user_password(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        form = SetPasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('admin_user_edit', user_id=user.id)
+    else:
+        form = SetPasswordForm(user)
+    return render(request, 'admin/change_password.html', {'form': form, 'target_user': user})
 
 reader = easyocr.Reader(['vi', 'en'])
 MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'intent_model.pkl')
@@ -492,10 +563,12 @@ try:
     intent_model = joblib.load(MODEL_PATH)
 except Exception:
     print("Cảnh báo: Chưa tìm thấy file intent_model.pkl")
-    intent_model = None
+    intent_model = None 
+    
 
 @csrf_exempt
 def api_chat_bot(request):
+    
     if request.method == 'POST':
         tin_nhan = request.POST.get('message', '').strip()
         anh_upload = request.FILES.get('image')

@@ -1,11 +1,15 @@
 # Tương tự như việc gom các Endpoint của một Controller cụ thể trong Spring Boot
+
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.contrib import admin
 from . import views
 
 urlpatterns = [
+
+    path('admin/', admin.site.urls),
     # Cấu hình các "Route" (Endpoints) điều hướng đến các View hàm xử lý
     path("", views.dashboard, name='dashboard'),
     path("accounts/register/", views.register_view, name='register'),
@@ -27,7 +31,8 @@ urlpatterns = [
     path("staff/users/", views.admin_user_list, name='admin_user_list'),
     path("staff/users/<int:user_id>/edit/", views.admin_user_edit, name='admin_user_edit'),
     path("staff/users/<int:user_id>/delete/", views.admin_user_delete, name='admin_user_delete'),
-
+    path("staff/users/add/", views.add_new_user, name='add_new_user'),
+    path("staff/users/<int:user_id>/password/", views.admin_change_user_password, name='admin_password_change'),
     # Admin book management (web UI for staff)
     path("staff/books/", views.admin_book_list, name='admin_book_list'),
     path("staff/books/add/", views.admin_book_add, name='admin_book_add'),
@@ -58,3 +63,4 @@ urlpatterns = [
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.BASE_DIR / 'static')
