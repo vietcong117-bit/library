@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:480px; margin:24px auto;">
+    <h2>Xác nhận xóa sách</h2>
+    <p>Bạn có chắc muốn xóa <strong>{{ book.title }}</strong> không?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Xóa</button>
+        <a href="{% url 'admin_book_list' %}">Hủy</a>
+    </form>
+</div>
+{% endblock %}

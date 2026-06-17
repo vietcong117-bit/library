@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:720px; margin:24px auto;">
+    <h2>{{ action }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">Lưu</button>
+        <a href="{% url 'admin_book_list' %}" class="btn-link">Hủy</a>
+    </form>
+</div>
+{% endblock %}

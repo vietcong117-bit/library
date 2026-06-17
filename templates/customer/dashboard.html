@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:16px;">
+    <div class="stat-card">
+        <div class="stat-icon blue"></div>
+        <div class="stat-info">
+            <p>Books</p>
+            <div class="stat-value">{{ total_books }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green"></div>
+        <div class="stat-info">
+            <p>Borrowed</p>
+            <div class="stat-value">{{ borrowed_count }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon orange"></div>
+        <div class="stat-info">
+            <p>Favorites</p>
+            <div class="stat-value">{{ favorites_count }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon purple"></div>
+        <div class="stat-info">
+            <p>Active Users</p>
+            <div class="stat-value">{{ active_users }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon teal"></div>
+        <div class="stat-info">
+            <p>Orders</p>
+            <div class="stat-value">{{ total_orders }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon red"></div>
+        <div class="stat-info">
+            <p>Due Soon</p>
+            <div class="stat-value">{{ due_soon_count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid" style="margin-top:24px; grid-template-columns: 2fr 1fr;">
+    <div class="dashboard-card">
+        <h3>Recently Added Books</h3>
+        <div class="book-list-compact">
+            {% for book in recent_books %}
+            <div class="book-item-compact">
+                {% if book.image %}
+                <img src="{{ book.image.url }}" alt="">
+                {% else %}
+                <img src="https://picsum.photos/80/110?random={{ forloop.counter }}" alt="">
+                {% endif %}
+                <div>
+                    <p class="title">{{ book.title }}</p>
+                    <p class="author">{{ book.author }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <p>Không có sách mới.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Top Borrowed</h3>
+        <div class="ranking-list">
+            {% for item in top_borrowed %}
+            <div class="ranking-item"><div class="rank">{{ forloop.counter }}</div><div class="title">{{ item.title }}</div><div class="count">{{ item.count }}</div></div>
+            {% empty %}
+            <p>Chưa có dữ liệu mượn.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

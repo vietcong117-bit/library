@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:960px; margin:24px auto;">
+    <h2>🛒 Giỏ hàng</h2>
+
+    {% if cart.items.exists %}
+        <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+            <thead>
+                <tr style="background:#f5f5f5; border-bottom:2px solid #ddd;">
+                    <th style="text-align:left; padding:12px;">Sách</th>
+                    <th style="text-align:center; padding:12px;">Đơn giá</th>
+                    <th style="text-align:center; padding:12px;">Số lượng</th>
+                    <th style="text-align:center; padding:12px;">Thành tiền</th>
+                    <th style="text-align:right; padding:12px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart.items.all %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:12px;">
+                        <strong>{{ item.book.title }}</strong><br>
+                        <small>Tác giả: {{ item.book.author }}</small>
+                    </td>
+                    <td style="text-align:center; padding:12px;">{{ item.book.price }} đ</td>
+                    <td style="text-align:center; padding:12px;">
+                        <form method="post" action="{% url 'update_cart_item' item.id %}" style="display:inline-flex; gap:8px;">
+                            {% csrf_token %}
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" style="width:60px;">
+                            <button type="submit" style="padding:6px 12px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;">Cập nhật</button>
+                        </form>
+                    </td>
+                    <td style="text-align:center; padding:12px;">{{ item.get_total_price }} đ</td>
+                    <td style="text-align:right; padding:12px;">
+                        <form method="post" action="{% url 'remove_from_cart' item.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" style="padding:6px 12px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="margin-top:20px; text-align:right;">
+            <h3>Tổng tiền: {{ cart.get_total_price }} đ</h3>
+            <h4>Tổng số sản phẩm: {{ cart.get_total_items }}</h4>
+        </div>
+
+        <div style="margin-top:20px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <a href="{% url 'books' %}" style="padding:10px 20px; background:#6c757d; color:white; text-decoration:none; border-radius:4px;">← Tiếp tục mua sắm</a>
+            <form method="post" action="{% url 'checkout' %}">
+                {% csrf_token %}
+                <button type="submit" style="padding:10px 20px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Thanh toán</button>
+            </form>
+        </div>
+    {% else %}
+        <p style="margin-top:20px; font-size:16px; color:#666;">
+            Giỏ hàng của bạn đang trống. <a href="{% url 'books' %}">Bắt đầu mua sắm</a>
+        </p>
+    {% endif %}
+</div>
+{% endblock %}
