@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-grid" style="margin-top:24px; grid-template-columns: 2fr 1fr;">
+    <div class="dashboard-card">
+        <h3>Sách vừa thêm</h3>
+        <div class="book-list-compact">
+            {% for book in recent_books %}
+            <div class="book-item-compact">
+                {% if book.image %}
+                <img src="{{ book.image.url }}" alt="">
+                {% else %}
+                <img src="https://picsum.photos/80/110?random={{ forloop.counter }}" alt="">
+                {% endif %}
+                <div>
+                    <p class="title">{{ book.title }}</p>
+                    <p class="author">{{ book.author }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <p>Không có sách mới.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Sách được mượn nhiều nhất</h3>
+        <div class="ranking-list">
+            {% for item in top_borrowed %}
+            <div class="ranking-item"><div class="rank">{{ forloop.counter }}</div><div class="title">{{ item.title }}</div><div class="count">{{ item.count }}</div></div>
+            {% empty %}
+            <p>Chưa có dữ liệu mượn.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

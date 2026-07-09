@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {% endblock %}
+
+{% block content %}
+<div class="profile-container" style="max-width: 800px; margin: 24px auto; padding: 0 20px;">
+    <div class="header-section" style="margin-bottom: 24px;">
+        <h2 class="section-title">Thông tin tài khoản</h2>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="profile-info" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="info-row">
+                <span style="color: var(--text-muted);">Tên người dùng</span>
+                <span style="font-weight: 600; color: var(--text-main);">{{ user.username }}</span>
+            </div>
+            <div class="info-row">
+                <span style="color: var(--text-muted);">Email</span>
+                <span style="font-weight: 600; color: var(--text-main);">{{ user.email }}</span>
+            </div>
+            <div class="info-row">
+                <span style="color: var(--text-muted);">Họ tên</span>
+                <span style="font-weight: 600; color: var(--text-main);">{{ user.first_name }} {{ user.last_name|default:"(chưa cập nhật)" }}</span>
+            </div>
+            <div class="info-row">
+                <span style="color: var(--text-muted);">Ngày tham gia</span>
+                <span style="font-weight: 600; color: var(--text-main);">{{ user.date_joined|date:"d/m/Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons" style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="{% url 'profile_edit' %}" class="btn btn-primary">Chỉnh sửa profile</a>
+        <a href="{% url 'change_password' %}" class="btn btn-secondary">Đổi mật khẩu</a>
+        <a href="{% url 'order_history' %}" class="btn btn-ghost">Lịch sử đơn hàng</a>
+        <a href="{% url 'borrowed' %}" class="btn btn-ghost">Lịch sử mượn sách</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container" style="max-width: 500px; margin: 48px auto; padding: 0 20px;">
+    
+    <div class="dashboard-card" style="padding: 32px; border-top: 4px solid #ef4444; text-align: center;">
+        
+        <div style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
+        
+        <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Xác nhận xóa sách</h2>
+        
+        <p style="color: #475569; margin-bottom: 24px;">
+            Bạn có chắc chắn muốn xóa cuốn sách <strong>"{{ book.title }}"</strong> khỏi hệ thống? 
+            <br>
+            Hành động này sẽ xóa vĩnh viễn dữ liệu sách và <strong>không thể khôi phục</strong>.
+        </p>
+
+        <form method="post" style="display: flex; gap: 12px; justify-content: center;">
+            {% csrf_token %}
+            
+            <a href="{% url 'admin_book_list' %}" class="btn btn-ghost" style="padding: 10px 20px;">Hủy</a>
+            
+            <button type="submit" class="btn" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                Xác nhận xóa
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
