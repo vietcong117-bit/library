@@ -504,7 +504,6 @@ def login_view(request):
             login(request, form.get_user())
             return redirect('dashboard')
         else:
-            # Ép tất cả các lỗi về chung một thông báo
             if not request.POST.get('username') or not request.POST.get('password'):
                 form.add_error(None, "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.")
             else:
@@ -576,11 +575,13 @@ def api_chat_bot(request):
             query = user_message.lower().replace("tìm", "").replace("sách", "").replace("cuốn", "").replace("truyện", "").strip()
             
             if query:
-                # Tìm trong Database bảng Book
-                sach = Book.objects.filter(title__icontains=query).first()
+                sach = None
+                
+                for b in Book.objects.all():
+                    if query in b.title.lower():
+                        sach = b
                 
                 if sach:
-                   
                     link = f"/books/{sach.id}/" 
                     
                     reply = (
