@@ -224,3 +224,23 @@ function toggleFavorite(bookId) {
   renderBooks();
   renderFavorites();
 }
+
+function sendMessage() {
+    let formData = new FormData();
+    formData.append('message', inputField.value);
+    
+    // Nếu người dùng chọn file ảnh thì append vào
+    if (fileInput.files.length > 0) {
+        formData.append('image', fileInput.files[0]);
+    }
+
+    fetch('/chat/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Code hiển thị data.reply vào khung chat của bạn
+        appendMessage(data.reply); 
+    });
+}

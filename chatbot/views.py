@@ -1,5 +1,9 @@
 # truy vấn
 
+from urllib import response
+
+from urllib import response
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.contrib.auth.models import User
@@ -596,3 +600,76 @@ def api_chat_bot(request):
                 reply = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách nhé!"
 
         return JsonResponse({"reply": reply, "intent": intent})
+    
+
+
+# chatbot/views.py
+from django.http import JsonResponse
+import os
+from .models import Book 
+from vision_brain import predict_book_category
+from ai_brain import get_chatbot_response
+
+@csrf_exempt
+def chat_view(request):
+    if request.method == 'POST':
+        # --- 1. XỬ LÝ ẢNH ---
+        if request.FILES.get('image'):
+            image = request.FILES['image']
+            upload_dir = os.path.join('media', 'temp')
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir)
+            temp_path = os.path.join(upload_dir, image.name)
+            with open(temp_path, 'wb+') as f:
+                for chunk in image.chunks(): 
+                    f.write(chunk)
+            
+            category = predict_book_category(temp_path)
+            sach_goi_y = Book.objects.filter(category__iexact=category).first()
+            
+            if sach_goi_y:
+                link = f"/books/{sach_goi_y.id}/"
+                response = (
+                    f"Mình thấy ảnh này thuộc thể loại: <b>{category}</b>.<br>"
+                    f"Gợi ý cho bạn cuốn: <b>{sach_goi_y.title}</b><br>"
+                    f"Tác giả: {sach_goi_y.author}<br>"
+                    f"<a href='{link}' style='color:blue; font-weight:bold;'>Nhấn vào đây để xem chi tiết</a>"
+                )
+            else:
+                response = f"Ảnh này thuộc thể loại: {category}, nhưng mình chưa có cuốn nào thuộc thể loại này trong kho."
+            # Dọn dẹp file tạm
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+                
+            return JsonResponse({'reply': response})            
+        # --- 2. XỬ LÝ TEXT ---
+        else:
+            msg = request.POST.get('message', '').strip()
+            intent, response = get_chatbot_response(msg)
+            
+            if intent == "tim_sach":
+                query = msg.lower().replace("tìm", "").replace("sách", "").replace("cuốn", "").replace("truyện", "").strip()
+                
+                if not query or query in ["tìm", "sách", "tìm sách"]:
+                    response = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách nhé!"
+                else:
+                    sach_tim_thay = None
+                    for b in Book.objects.all():
+                        if query in b.title.lower():
+                            sach_tim_thay = b
+                            break
+                    
+                    if sach_tim_thay:
+                        link = f"/books/{sach_tim_thay.id}/"
+                        response = (
+                            f"Mình tìm thấy cuốn <b>{sach_tim_thay.title}</b> rồi!<br>"
+                            f"Tác giả: {sach_tim_thay.author}<br>"
+                            f"Còn lại: {sach_tim_thay.available} cuốn.<br>"
+                            f"<a href='{link}' style='color:blue; font-weight:bold;'>Nhấn vào đây để xem chi tiết</a>"
+                        )
+                    else:
+                        response = f"Mình tìm không thấy cuốn nào tên là '{query}' trong thư viện cả."
+
+            return JsonResponse({'reply': response})
+    
+    return JsonResponse({'reply': 'Method không được hỗ trợ'}, status=405)

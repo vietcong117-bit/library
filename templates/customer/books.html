@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-
+<input type="file" id="image-upload" style="display:none;" onchange="handleImageUpload()">
+<button type="button" onclick="document.getElementById('image-upload').click()">Gửi ảnh bìa</button
 <form class="search-form" action="{% url 'books' %}" method="get">
+    
     <select name="category">
         <option value="">Tất cả thể loại</option>
         <option value="tech" {% if category == 'tech' %}selected{% endif %}>Công nghệ</option>

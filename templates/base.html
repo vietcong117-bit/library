@@ -518,16 +518,92 @@
     <div id="chat-box" class="chat-messages">
         <p style="background: #e2e8f0; padding: 10px; border-radius: 8px; width: fit-content; font-size: 14px; margin-top: 0;">Chào bạn! Mình có thể giúp gì cho bạn? Bạn cứ gõ tên sách hoặc gửi ảnh bìa nhé!</p>
     </div>
-    <div class="chat-input-area" style="align-items: center;">
-       
-        <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 20px; outline: none;" onkeypress="if(event.key === 'Enter') sendMessage()">
-        
-        <button onclick="sendMessage()" style="margin-left: 8px; background: #6366f1; color: white; border:none; padding: 8px 16px; border-radius: 20px; cursor:pointer; font-weight: bold;">Gửi</button>
-    </div>
+   <div class="chat-input-area" style="display: flex; align-items: center; padding: 10px;">
+    <!-- Nút chọn ảnh (ẩn input thực tế) -->
+    <input type="file" id="image-upload" accept="image/*" style="display:none;" onchange="handleImageUpload()">
+
+    <button onclick="document.getElementById('image-upload').click()" style="background:none; border:none; cursor:pointer; font-size: 20px; margin-right: 8px;">📷</button>
+    
+    <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 20px; outline: none;" onkeypress="if(event.key === 'Enter') sendMessage()">
+    
+    <button onclick="sendMessage()" style="margin-left: 8px; background: #6366f1; color: white; border:none; padding: 8px 16px; border-radius: 20px; cursor:pointer; font-weight: bold;">Gửi</button>
 </div>
 
 <script>
 // Scripts cũ của bạn (Menu Profile)
+document.addEventListener("DOMContentLoaded", function() {
+    const chatBox = document.getElementById('chat-box');
+    const chatInput = document.getElementById('chat-input');
+    const imageInput = document.getElementById('image-upload');
+
+    // 1. Xử lý khi chọn ảnh
+    imageInput.addEventListener('change', function() {
+        if (!this.files[0]) return;
+        
+        let formData = new FormData();
+        formData.append('image', this.files[0]);
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+        // Hiển thị ảnh preview
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            chatBox.innerHTML += `<div style="text-align: right; margin: 10px 0;"><img src="${e.target.result}" style="max-width: 150px; border-radius: 8px;"></div>`;
+        };
+        reader.readAsDataURL(this.files[0]);
+
+        fetch('/chat/', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            chatBox.innerHTML += `<div class="bot-message" style="background: #e2e8f0; padding: 10px; margin: 5px 0; border-radius: 8px;">${data.reply}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    });
+
+    // 2. Xử lý gửi tin nhắn text
+    window.sendMessage = function() {
+        let msg = chatInput.value.trim();
+        if (msg === "") return;
+        
+        chatBox.innerHTML += `<p style="background: #d1fae5; padding: 8px; border-radius: 8px; margin-left: auto; width: fit-content;">${msg}</p>`;
+        chatInput.value = "";
+        
+        let formData = new FormData();
+        formData.append('message', msg);
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+        fetch('/chat/', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            chatBox.innerHTML += `<p style="background: #e2e8f0; padding: 8px; margin: 5px 0; border-radius: 8px;">${data.reply}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    };
+});
+
+function handleImageUpload() {
+        let fileInput = document.getElementById('image-upload');
+        let chatBox = document.getElementById('chat-box'); // Đảm bảo bạn có div này trong HTML
+        
+        if (!fileInput.files[0]) return;
+
+        let formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+
+        // Gửi ảnh lên server
+       fetch('/chat/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Dữ liệu nhận được từ server:", data); // Kiểm tra F12 -> Console                    
+                    let chatBox = document.getElementById('chat-box');
+                    if (chatBox) {
+                        chatBox.innerHTML += `<div class="bot-message">${data.reply}</div>`;
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    }
+                })
+    }
 function getCookie(name) {
     const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return v ? v.pop() : '';
@@ -549,33 +625,68 @@ function toggleChat() {
 }
 
 function sendMessage() {
-    const input = document.getElementById('chat-input');
-    const box = document.getElementById('chat-box');
-    let text = input.value.trim();
-    if (!text) return; 
+    let input = document.getElementById('chat-input');
+    let fileInput = document.getElementById('image-upload');
+    let chatBox = document.getElementById('chat-box');
+    let formData = new FormData();
 
-    // Hiện tin nhắn người dùng
-    box.innerHTML += `<div style="text-align: right; margin-bottom: 15px;"><span style="background: #6366f1; color: white; padding: 10px 14px; border-radius: 15px 15px 0 15px; font-size: 14px; display: inline-block; max-width: 80%; text-align: left;">${text}</span></div>`;
+    // Nếu người dùng gửi ảnh
+    if (fileInput.files.length > 0) {
+        formData.append('image', fileInput.files[0]);
+        // Hiển thị ảnh vào box trước
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            chatBox.innerHTML += `<div style="text-align: right; margin: 10px 0;">
+                                    <img src="${e.target.result}" style="max-width: 150px; border-radius: 8px;">
+                                  </div>`;
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        // Nếu là text
+        let msg = input.value.trim();
+        if (msg === "") return;
+        chatBox.innerHTML += `<p style="background: #d1fae5; padding: 8px; border-radius: 8px; margin-left: auto; width: fit-content;">${msg}</p>`;
+        formData.append('message', msg);
+        input.value = "";
+    }
 
-    input.value = '';
-    box.scrollTop = box.scrollHeight;
-
-    // Gửi JSON lên Django
-    fetch('/api/chat/', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({ message: text })
-    })
+    // Gửi chung về view
+    fetch('/chat/', { method: 'POST', body: formData, headers: {'X-CSRFToken': getCookie('csrftoken')} })
     .then(r => r.json())
     .then(data => {
-        let botHTML = data.reply;
-        box.innerHTML += `<div style="margin-bottom: 15px;"><p style="background: #e2e8f0; padding: 10px 14px; border-radius: 15px 15px 15px 0; width: fit-content; max-width: 80%; font-size: 14px; margin: 0;">${botHTML}</p></div>`;
-        box.scrollTop = box.scrollHeight;
+        // Bot luôn trả lời bằng cách này, không ảnh hưởng NLP hay CNN
+        chatBox.innerHTML += `<p style="background: #e2e8f0; padding: 8px; margin: 5px 0;">${data.reply}</p>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
     });
+    fileInput.value = "";
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        var inputElement = document.getElementById('image-upload');
+        if (inputElement) {
+            inputElement.addEventListener('change', function() {
+                // Nội dung logic gửi ảnh của bạn ở đây
+                let formData = new FormData();
+                formData.append('image', this.files[0]);
+
+                fetch('/chat/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    let chatBox = document.getElementById('chat-box');
+                    if (chatBox) {
+                        chatBox.innerHTML += `<div class="bot-message">${data.reply}</div>`;
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        }
+    });
+
 }
 </script>
+
 </body>
 </html>

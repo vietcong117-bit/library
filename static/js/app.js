@@ -214,6 +214,23 @@ function renderBorrowed() {
   `).join('');
 }
 
+function handleImageUpload() {
+    let fileInput = document.getElementById('image-upload');
+    let chatBox = document.getElementById('chat-box');
+
+    if (fileInput.files && fileInput.files[0]) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            // Hiển thị ảnh preview lên khung chat
+            chatBox.innerHTML += `<div style="text-align: right; margin: 5px 0;">
+                                    <img src="${e.target.result}" style="max-width: 150px; border-radius: 8px;">
+                                  </div>`;
+            chatBox.scrollTocp = chatBox.scrollHeight;
+        }
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+}
+
 function toggleFavorite(bookId) {
   const idx = favorites.indexOf(bookId);
   if (idx > -1) {

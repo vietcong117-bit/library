@@ -8,5 +8,6 @@ admin.site.register(Book)
 admin.site.register(Borrow)
 admin.site.register(Favorite)
 admin.site.register(Order)
+
 admin.site.register(OrderItem)
 admin.site.register(Review)
