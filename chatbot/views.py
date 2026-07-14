@@ -564,7 +564,7 @@ def admin_change_user_password(request, user_id):
 
 from django.http import JsonResponse
 import json
-from ai_brain import get_chatbot_response 
+from ai_brain import get_chatbot_response, extract_search_query, is_query_too_short
 from .models import Book 
 
 def api_chat_bot(request):
@@ -575,16 +575,14 @@ def api_chat_bot(request):
         intent, reply = get_chatbot_response(user_message)
         
         if intent == "tim_sach":
-            
-            query = user_message.lower().replace("tìm", "").replace("sách", "").replace("cuốn", "").replace("truyện", "").strip()
-            
-            if query:
-                sach = None
-                
-                for b in Book.objects.all():
-                    if query in b.title.lower():
-                        sach = b
-                
+
+            query = extract_search_query(user_message)
+
+            if is_query_too_short(query):
+                reply = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách cụ thể hơn nhé (ít nhất 2 ký tự)."
+            else:
+                sach = Book.objects.filter(title__icontains=query).first()
+
                 if sach:
                     link = f"/books/{sach.id}/" 
                     
@@ -596,8 +594,6 @@ def api_chat_bot(request):
                     )
                 else:
                     reply = f"Mình tìm không thấy cuốn nào tên là '{query}' trong thư viện cả."
-            else:
-                reply = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách nhé!"
 
         return JsonResponse({"reply": reply, "intent": intent})
     
@@ -608,7 +604,7 @@ from django.http import JsonResponse
 import os
 from .models import Book 
 from vision_brain import predict_book_category
-from ai_brain import get_chatbot_response
+from ai_brain import get_chatbot_response, extract_search_query, is_query_too_short
 
 @csrf_exempt
 def chat_view(request):
@@ -648,17 +644,13 @@ def chat_view(request):
             intent, response = get_chatbot_response(msg)
             
             if intent == "tim_sach":
-                query = msg.lower().replace("tìm", "").replace("sách", "").replace("cuốn", "").replace("truyện", "").strip()
-                
-                if not query or query in ["tìm", "sách", "tìm sách"]:
-                    response = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách nhé!"
+                query = extract_search_query(msg)
+
+                if is_query_too_short(query):
+                    response = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách cụ thể hơn nhé (ít nhất 2 ký tự)."
                 else:
-                    sach_tim_thay = None
-                    for b in Book.objects.all():
-                        if query in b.title.lower():
-                            sach_tim_thay = b
-                            break
-                    
+                    sach_tim_thay = Book.objects.filter(title__icontains=query).first()
+
                     if sach_tim_thay:
                         link = f"/books/{sach_tim_thay.id}/"
                         response = (
