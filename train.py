@@ -39,4 +39,4 @@ with open("chatbot_model.pkl", "wb") as f:
 with open("vectorizer.pkl", "wb") as f:
     pickle.dump(vectorizer, f)
 
-print("✅ Đã huấn luyện xong! Model giờ hỗ trợ predict_proba() cho Confidence Threshold.")
+print("Đã huấn luyện xong! Model giờ hỗ trợ predict_proba() cho Confidence Threshold.")
