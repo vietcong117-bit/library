@@ -56,7 +56,7 @@ def get_chatbot_response(user_message):
 STOPWORDS_SEARCH = {
     "tìm", "kiếm", "sách", "cuốn", "truyện", "quyển", "giúp", "mình",
     "muốn", "hỏi", "cho", "về", "có", "là", "tên", "đọc", "mượn",
-    "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ"
+    "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ", "tôi","tớ"
 }
 
 MIN_QUERY_LENGTH = 2  # từ khóa dưới 2 ký tự thì coi là quá ngắn, không tìm
