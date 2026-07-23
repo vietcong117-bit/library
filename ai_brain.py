@@ -55,8 +55,8 @@ def get_chatbot_response(user_message):
 # (vd: chữ "a" trong "Clean Code" sẽ không bị đụng tới).
 STOPWORDS_SEARCH = {
     "tìm", "kiếm", "sách", "cuốn", "truyện", "quyển", "giúp", "mình",
-    "muốn", "hỏi", "cho", "về", "có", "là", "tên", "đọc", "mượn",
-    "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ", "tôi","tớ"
+    "muốn", "hỏi", "cho", "về", "có", "là", "tên", "đọc", "mượn", "của"
+    "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ", "tôi","tớ","nào"
 }
 
 MIN_QUERY_LENGTH = 2  # từ khóa dưới 2 ký tự thì coi là quá ngắn, không tìm
