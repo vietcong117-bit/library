@@ -564,7 +564,7 @@ def admin_change_user_password(request, user_id):
 
 from django.http import JsonResponse
 import json
-from ai_brain import get_chatbot_response, extract_search_query, is_query_too_short
+from ai_brain import get_chatbot_response, extract_search_query, is_query_too_short, find_book_by_query, extract_author_query, find_books_by_author
 from .models import Book 
 
 def api_chat_bot(request):
@@ -581,7 +581,7 @@ def api_chat_bot(request):
             if is_query_too_short(query):
                 reply = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách cụ thể hơn nhé (ít nhất 2 ký tự)."
             else:
-                sach = Book.objects.filter(title__icontains=query).first()
+                sach = find_book_by_query(query, Book.objects.all())
 
                 if sach:
                     link = f"/books/{sach.id}/" 
@@ -595,6 +595,25 @@ def api_chat_bot(request):
                 else:
                     reply = f"Mình tìm không thấy cuốn nào tên là '{query}' trong thư viện cả."
 
+        elif intent == "tim_theo_tac_gia":
+
+            author_query = extract_author_query(user_message)
+
+            if is_query_too_short(author_query):
+                reply = "Bạn muốn tìm sách của tác giả nào? Hãy gõ tên tác giả cụ thể hơn nhé (ít nhất 2 ký tự)."
+            else:
+                sach_list = find_books_by_author(author_query, Book.objects.all())
+
+                if sach_list:
+                    items = "".join(
+                        f"<br>- <b>{b.title}</b> (còn {b.available} cuốn) — "
+                        f"<a href='/books/{b.id}/' style='color:blue; font-weight:bold;'>Xem chi tiết</a>"
+                        for b in sach_list
+                    )
+                    reply = f"Mình tìm thấy {len(sach_list)} cuốn của tác giả '{author_query}':{items}"
+                else:
+                    reply = f"Mình tìm không thấy tác giả nào tên là '{author_query}' trong thư viện cả."
+
         return JsonResponse({"reply": reply, "intent": intent})
     
 
@@ -604,7 +623,7 @@ from django.http import JsonResponse
 import os
 from .models import Book 
 from vision_brain import predict_book_category
-from ai_brain import get_chatbot_response, extract_search_query, is_query_too_short
+from ai_brain import get_chatbot_response, extract_search_query, is_query_too_short, find_book_by_query, extract_author_query, find_books_by_author
 
 @csrf_exempt
 def chat_view(request):
@@ -649,7 +668,7 @@ def chat_view(request):
                 if is_query_too_short(query):
                     response = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách cụ thể hơn nhé (ít nhất 2 ký tự)."
                 else:
-                    sach_tim_thay = Book.objects.filter(title__icontains=query).first()
+                    sach_tim_thay = find_book_by_query(query, Book.objects.all())
 
                     if sach_tim_thay:
                         link = f"/books/{sach_tim_thay.id}/"
@@ -661,6 +680,24 @@ def chat_view(request):
                         )
                     else:
                         response = f"Mình tìm không thấy cuốn nào tên là '{query}' trong thư viện cả."
+
+            elif intent == "tim_theo_tac_gia":
+                author_query = extract_author_query(msg)
+
+                if is_query_too_short(author_query):
+                    response = "Bạn muốn tìm sách của tác giả nào? Hãy gõ tên tác giả cụ thể hơn nhé (ít nhất 2 ký tự)."
+                else:
+                    sach_list = find_books_by_author(author_query, Book.objects.all())
+
+                    if sach_list:
+                        items = "".join(
+                            f"<br>- <b>{b.title}</b> (còn {b.available} cuốn) — "
+                            f"<a href='/books/{b.id}/' style='color:blue; font-weight:bold;'>Xem chi tiết</a>"
+                            for b in sach_list
+                        )
+                        response = f"Mình tìm thấy {len(sach_list)} cuốn của tác giả '{author_query}':{items}"
+                    else:
+                        response = f"Mình tìm không thấy tác giả nào tên là '{author_query}' trong thư viện cả."
 
             return JsonResponse({'reply': response})
     
