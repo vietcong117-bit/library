@@ -68,6 +68,27 @@ INTENT_DATA = {
         "trả sách trễ bị phạt không", "phạt tiền bao nhiêu", "quá hạn trả sách",
         "làm mất sách thì sao", "quên trả sách", "hư hỏng sách bị đền thế nào",
         "quá hạn mượn sách có sao không", "mất sách đền thế nào"
+    ],
+
+    # -------------------------------------------------------------
+    # Tìm sách theo TÊN TÁC GIẢ. Luôn có cụm "tác giả" / "viết bởi" / "của"
+    # + TÊN NGƯỜI đi kèm, để phân biệt rõ với tim_sach (vốn đi với TÊN SÁCH).
+    # -------------------------------------------------------------
+    "tim_theo_tac_gia": [
+        "tìm tác phẩm của tác giả nam cao",
+        "sách của tác giả dale carnegie",
+        "tác phẩm của robert martin",
+        "tìm sách do tác giả alec ross viết",
+        "có sách nào của tác giả nam cao không",
+        "cho mình xem sách của c.s. lewis",
+        "tìm truyện của tác giả nam cao",
+        "sách viết bởi dale carnegie",
+        "tác giả nam cao có những sách nào",
+        "liệt kê sách của tác giả dale carnegie",
+        "tìm giúp mình sách của tác giả robert martin",
+        "mình muốn xem các tác phẩm của nam cao",
+        "sách nào do alec ross viết",
+        "cho mình hỏi tác giả c.s. lewis có sách gì"
     ]
 }
 
@@ -78,6 +99,7 @@ RESPONSES = {
     "tim_sach": "Bạn vui lòng nhập tên sách hoặc từ khóa nhé.",
     "hoi_thu_tuc": "Để mượn sách, bạn chỉ cần mang Thẻ sinh viên đến quầy thủ thư để cán bộ hỗ trợ làm thủ tục mượn nha.",
     "hoi_phat_tre": "Sách trả quá hạn sẽ phạt 2.000đ/ngày. Trường hợp làm mất hoặc làm rách hỏng sách, bạn sẽ phải đền cuốn sách mới tương đương hoặc bồi thường theo giá trị của cuốn sách nha.",
+    "tim_theo_tac_gia": "Bạn vui lòng cho mình biết tên tác giả nhé.",
     # Fallback khi độ tin cậy dự đoán thấp hơn CONFIDENCE_THRESHOLD (xem ai_brain.py)
     "unknown": "Xin lỗi, thư viện chưa hiểu ý bạn lắm 🙏. Bạn có thể nói rõ hơn được không?"
 }
