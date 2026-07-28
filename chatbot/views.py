@@ -639,26 +639,47 @@ def chat_view(request):
                 for chunk in image.chunks(): 
                     f.write(chunk)
             
-            category = predict_book_category(temp_path)
-            sach_goi_y = Book.objects.filter(category__iexact=category).first()
+            sach_goi_y = None
             
+            # 1. Đọc chữ trên ảnh bìa để tìm sách khớp tên
+            try:
+                from vision_brain import extract_text_from_image
+                detected_text = extract_text_from_image(temp_path)
+                if detected_text:
+                    for book in Book.objects.all():
+                        if book.title.lower() in detected_text:
+                            sach_goi_y = book
+                            break
+            except Exception:
+                pass
+            
+            # 2. Nếu không đọc được chữ khớp tên sách, tìm theo tên file tải lên
+            if not sach_goi_y:
+                image_name = os.path.splitext(image.name)[0].lower()
+                if len(image_name) > 2 and image_name not in ['image', 'images', 'download', 'untitle', 'untitled']:
+                    sach_goi_y = Book.objects.filter(title__icontains=image_name).first()
+            
+            # Trả về kết quả (Không fallback gợi ý sách ngẫu nhiên theo thể loại)
             if sach_goi_y:
                 link = f"/books/{sach_goi_y.id}/"
                 response = (
-                    f"Mình thấy ảnh này thuộc thể loại: <b>{category}</b>.<br>"
-                    f"Gợi ý cho bạn cuốn: <b>{sach_goi_y.title}</b><br>"
+                    f"Mình nhận diện được sách: <b>{sach_goi_y.title}</b><br>"
                     f"Tác giả: {sach_goi_y.author}<br>"
                     f"<a href='{link}' style='color:blue; font-weight:bold;'>Nhấn vào đây để xem chi tiết</a>"
                 )
             else:
-                response = f"Ảnh này thuộc thể loại: {category}, nhưng mình chưa có cuốn nào thuộc thể loại này trong kho."
+                response = "Không tìm thấy truyện/sách nào tương ứng với ảnh bạn gửi trong thư viện."
+
             # Dọn dẹp file tạm
             if os.path.exists(temp_path):
-                os.remove(temp_path)
-                
-            return JsonResponse({'reply': response})            
+                try:
+                    os.remove(temp_path)
+                except PermissionError:
+                    pass
+
+            return JsonResponse({'reply': response})
         # --- 2. XỬ LÝ TEXT ---
-        else:
+    else:
             msg = request.POST.get('message', '').strip()
             intent, response = get_chatbot_response(msg)
             

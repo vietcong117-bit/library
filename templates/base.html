@@ -520,7 +520,7 @@
     </div>
    <div class="chat-input-area" style="display: flex; align-items: center; padding: 10px;">
     <!-- Nút chọn ảnh (ẩn input thực tế) -->
-    <input type="file" id="image-upload" accept="image/*" style="display:none;" onchange="handleImageUpload()">
+    <input type="file" id="image-upload" accept="image/*" style="display:none;">
 
     <button onclick="document.getElementById('image-upload').click()" style="background:none; border:none; cursor:pointer; font-size: 20px; margin-right: 8px;">📷</button>
     
@@ -530,163 +530,97 @@
 </div>
 
 <script>
-// Scripts cũ của bạn (Menu Profile)
-document.addEventListener("DOMContentLoaded", function() {
-    const chatBox = document.getElementById('chat-box');
-    const chatInput = document.getElementById('chat-input');
-    const imageInput = document.getElementById('image-upload');
-
-    // 1. Xử lý khi chọn ảnh
-    imageInput.addEventListener('change', function() {
-        if (!this.files[0]) return;
-        
-        let formData = new FormData();
-        formData.append('image', this.files[0]);
-        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-
-        // Hiển thị ảnh preview
-        let reader = new FileReader();
-        reader.onload = (e) => {
-            chatBox.innerHTML += `<div style="text-align: right; margin: 10px 0;"><img src="${e.target.result}" style="max-width: 150px; border-radius: 8px;"></div>`;
-        };
-        reader.readAsDataURL(this.files[0]);
-
-        fetch('/chat/', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(data => {
-            chatBox.innerHTML += `<div class="bot-message" style="background: #e2e8f0; padding: 10px; margin: 5px 0; border-radius: 8px;">${data.reply}</div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-    });
-
-    // 2. Xử lý gửi tin nhắn text
-    window.sendMessage = function() {
-        let msg = chatInput.value.trim();
-        if (msg === "") return;
-        
-        chatBox.innerHTML += `<p style="background: #d1fae5; padding: 8px; border-radius: 8px; margin-left: auto; width: fit-content;">${msg}</p>`;
-        chatInput.value = "";
-        
-        let formData = new FormData();
-        formData.append('message', msg);
-        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-
-        fetch('/chat/', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(data => {
-            chatBox.innerHTML += `<p style="background: #e2e8f0; padding: 8px; margin: 5px 0; border-radius: 8px;">${data.reply}</p>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-    };
-});
-
-function handleImageUpload() {
-        let fileInput = document.getElementById('image-upload');
-        let chatBox = document.getElementById('chat-box'); // Đảm bảo bạn có div này trong HTML
-        
-        if (!fileInput.files[0]) return;
-
-        let formData = new FormData();
-        formData.append('image', fileInput.files[0]);
-
-        // Gửi ảnh lên server
-       fetch('/chat/', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Dữ liệu nhận được từ server:", data); // Kiểm tra F12 -> Console                    
-                    let chatBox = document.getElementById('chat-box');
-                    if (chatBox) {
-                        chatBox.innerHTML += `<div class="bot-message">${data.reply}</div>`;
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                    }
-                })
-    }
+// Lấy CSRF token từ cookie
 function getCookie(name) {
     const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return v ? v.pop() : '';
 }
+
+// Bật/tắt menu Profile
 function toggleProfileMenu() {
     const menu = document.getElementById('profileMenu');
     if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
-document.addEventListener('click', function(e) {
-    const menu = document.getElementById('profileMenu');
-    const isProfileButton = e.target.closest('button[onclick*="toggleProfileMenu"]');
-    if (menu && !isProfileButton && !menu.contains(e.target)) menu.style.display = 'none';
-});
 
-// Script Chatbot (Đã tích hợp API)
+// Bật/tắt cửa sổ Chatbot
 function toggleChat() {
     const popup = document.getElementById('chat-popup');
     popup.style.display = (popup.style.display === 'flex') ? 'none' : 'flex';
 }
 
-function sendMessage() {
-    let input = document.getElementById('chat-input');
-    let fileInput = document.getElementById('image-upload');
-    let chatBox = document.getElementById('chat-box');
-    let formData = new FormData();
+document.addEventListener("DOMContentLoaded", function() {
+    const chatBox = document.getElementById('chat-box');
+    const chatInput = document.getElementById('chat-input');
+    const imageInput = document.getElementById('image-upload');
 
-    // Nếu người dùng gửi ảnh
-    if (fileInput.files.length > 0) {
-        formData.append('image', fileInput.files[0]);
-        // Hiển thị ảnh vào box trước
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            chatBox.innerHTML += `<div style="text-align: right; margin: 10px 0;">
-                                    <img src="${e.target.result}" style="max-width: 150px; border-radius: 8px;">
-                                  </div>`;
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-    } else {
-        // Nếu là text
-        let msg = input.value.trim();
-        if (msg === "") return;
-        chatBox.innerHTML += `<p style="background: #d1fae5; padding: 8px; border-radius: 8px; margin-left: auto; width: fit-content;">${msg}</p>`;
-        formData.append('message', msg);
-        input.value = "";
-    }
-
-    // Gửi chung về view
-    fetch('/chat/', { method: 'POST', body: formData, headers: {'X-CSRFToken': getCookie('csrftoken')} })
-    .then(r => r.json())
-    .then(data => {
-        // Bot luôn trả lời bằng cách này, không ảnh hưởng NLP hay CNN
-        chatBox.innerHTML += `<p style="background: #e2e8f0; padding: 8px; margin: 5px 0;">${data.reply}</p>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-    });
-    fileInput.value = "";
-    
-    document.addEventListener("DOMContentLoaded", function() {
-        var inputElement = document.getElementById('image-upload');
-        if (inputElement) {
-            inputElement.addEventListener('change', function() {
-                // Nội dung logic gửi ảnh của bạn ở đây
-                let formData = new FormData();
-                formData.append('image', this.files[0]);
-
-                fetch('/chat/', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    let chatBox = document.getElementById('chat-box');
-                    if (chatBox) {
-                        chatBox.innerHTML += `<div class="bot-message">${data.reply}</div>`;
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
+    // 1. Tắt Menu Profile khi click ra ngoài
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('profileMenu');
+        const isProfileButton = e.target.closest('button[onclick*="toggleProfileMenu"]');
+        if (menu && !isProfileButton && !menu.contains(e.target)) {
+            menu.style.display = 'none';
         }
     });
 
-}
-</script>
+    // 2. Xử lý Gửi tin nhắn Text
+    window.sendMessage = function() {
+        let msg = chatInput.value.trim();
+        if (msg === "") return;
 
+        // Hiển thị tin nhắn người dùng
+        chatBox.innerHTML += `<p style="background: #d1fae5; padding: 8px; border-radius: 8px; margin-left: auto; width: fit-content;">${msg}</p>`;
+        chatInput.value = "";
+
+        let formData = new FormData();
+        formData.append('message', msg);
+
+        fetch('/chat/', {
+            method: 'POST',
+            body: formData,
+            headers: {'X-CSRFToken': getCookie('csrftoken')}
+        })
+        .then(r => r.json())
+        .then(data => {
+            chatBox.innerHTML += `<div class="bot-message" style="background: #e2e8f0; padding: 10px; margin: 5px 0; border-radius: 8px;">${data.reply}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(err => console.error("Lỗi gửi tin nhắn:", err));
+    };
+
+    // 3. Xử lý Gửi ảnh (Chỉ đăng ký duy nhất 1 sự kiện change tại đây)
+    imageInput.addEventListener('change', function() {
+        if (!this.files[0]) return;
+
+        let file = this.files[0];
+        let formData = new FormData();
+        formData.append('image', file);
+
+        // Hiển thị preview ảnh người dùng vừa tải lên
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            chatBox.innerHTML += `<div style="text-align: right; margin: 10px 0;"><img src="${e.target.result}" style="max-width: 150px; border-radius: 8px;"></div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+        reader.readAsDataURL(file);
+
+        // Gửi ảnh lên server
+        fetch('/chat/', {
+            method: 'POST',
+            body: formData,
+            headers: {'X-CSRFToken': getCookie('csrftoken')}
+        })
+        .then(r => r.json())
+        .then(data => {
+            chatBox.innerHTML += `<div class="bot-message" style="background: #e2e8f0; padding: 10px; margin: 5px 0; border-radius: 8px;">${data.reply}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(err => console.error("Lỗi gửi ảnh:", err))
+        .finally(() => {
+            // Reset input để có thể chọn lại cùng 1 ảnh nếu muốn
+            imageInput.value = "";
+        });
+    });
+});
+</script>
 </body>
 </html>
