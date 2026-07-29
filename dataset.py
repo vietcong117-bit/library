@@ -64,11 +64,7 @@ INTENT_DATA = {
         "tìm quy định mượn sách của trường"
     ],
 
-    "hoi_phat_tre": [
-        "trả sách trễ bị phạt không", "phạt tiền bao nhiêu", "quá hạn trả sách",
-        "làm mất sách thì sao", "quên trả sách", "hư hỏng sách bị đền thế nào",
-        "quá hạn mượn sách có sao không", "mất sách đền thế nào"
-    ],
+  
 
     # -------------------------------------------------------------
     # Tìm sách theo TÊN TÁC GIẢ. Luôn có cụm "tác giả" / "viết bởi" / "của"
@@ -89,6 +85,45 @@ INTENT_DATA = {
         "mình muốn xem các tác phẩm của nam cao",
         "sách nào do alec ross viết",
         "cho mình hỏi tác giả c.s. lewis có sách gì"
+    ],
+
+    # -------------------------------------------------------------
+    # Hướng dẫn TRẢ sách (khác hoi_phat_tre: chỉ hỏi phạt/quá hạn/mất sách).
+    # Luôn có "trả sách" nhưng KHÔNG có từ trễ/phạt/quá hạn/mất/hư hỏng.
+    # -------------------------------------------------------------
+    "huong_dan_tra_sach": [
+        "tôi muốn trả sách",
+        "cách trả sách như thế nào",
+        "trả sách ở đâu",
+        "quy trình trả sách ra sao",
+        "làm sao để trả sách",
+        "hướng dẫn trả sách",
+        "trả sách cần mang theo gì",
+        "tôi cần trả cuốn sách đã mượn",
+        "muốn trả lại sách đã mượn",
+        "trả sách như thế nào vậy",
+        "cho mình hỏi cách trả sách",
+        "tôi trả sách ở quầy nào",
+        "thủ tục trả sách thế nào"
+    ],
+
+    # -------------------------------------------------------------
+    # Tìm sách theo THỂ LOẠI. Luôn có cụm "thể loại" / "loại" đi kèm
+    # tên thể loại, để phân biệt với tim_sach (tên sách cụ thể).
+    # -------------------------------------------------------------
+    "tim_theo_the_loai": [
+        "tìm sách thể loại văn học",
+        "sách thể loại trinh thám",
+        "có sách thể loại khoa học không",
+        "tìm truyện thể loại ngôn tình",
+        "sách loại kỹ năng sống có không",
+        "cho mình xem sách thể loại kinh tế",
+        "thể loại văn học có sách gì",
+        "liệt kê sách thể loại thiếu nhi",
+        "tìm sách thuộc thể loại lịch sử",
+        "mình muốn tìm sách thể loại tâm lý",
+        "có sách nào thể loại kinh doanh không",
+        "sách thể loại công nghệ có gì"
     ]
 }
 
@@ -98,8 +133,8 @@ RESPONSES = {
     "cam_on": "Không có chi đâu nè! Rất vui được hỗ trợ bạn.",
     "tim_sach": "Bạn vui lòng nhập tên sách hoặc từ khóa nhé.",
     "hoi_thu_tuc": "Để mượn sách, bạn chỉ cần mang Thẻ sinh viên đến quầy thủ thư để cán bộ hỗ trợ làm thủ tục mượn nha.",
-    "hoi_phat_tre": "Sách trả quá hạn sẽ phạt 2.000đ/ngày. Trường hợp làm mất hoặc làm rách hỏng sách, bạn sẽ phải đền cuốn sách mới tương đương hoặc bồi thường theo giá trị của cuốn sách nha.",
     "tim_theo_tac_gia": "Bạn vui lòng cho mình biết tên tác giả nhé.",
-    # Fallback khi độ tin cậy dự đoán thấp hơn CONFIDENCE_THRESHOLD (xem ai_brain.py)
-    "unknown": "Xin lỗi, thư viện chưa hiểu ý bạn lắm 🙏. Bạn có thể nói rõ hơn được không?"
+    "huong_dan_tra_sach": "Bạn mang sách cùng Thẻ sinh viên đến quầy thủ thư để trả sách nha. Nhớ trả đúng hạn để tránh bị phạt nhé!",
+    "tim_theo_the_loai": "Bạn vui lòng cho mình biết thể loại sách bạn muốn tìm nhé.",
+    "unknown": "Xin lỗi, thư viện chưa hiểu ý bạn lắm . Bạn có thể nói rõ hơn được không?"
 }
