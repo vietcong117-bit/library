@@ -42,7 +42,17 @@ INTENT_DATA = {
         "tôi cần mượn sách toán rời rạc",
         "bạn tìm giúp mình cuốn sách nhà giả kim",
         "sách đắc nhân tâm có trong thư viện không",
-        "tìm truyện tranh doraemon tập 5"
+        "tìm truyện tranh doraemon tập 5",
+
+        # --- Câu mẫu ĐỐI TRỌNG: tên sách trùng với từ chỉ thể loại/tác giả ---
+        # (giúp model không nhầm "tên sách chứa từ thể loại" với ý định
+        # tìm-theo-thể-loại, khi câu KHÔNG có "thể loại"/"loại" đi kèm)
+        "tìm sách công nghệ 8",
+        "mượn sách công nghệ 10",
+        "có sách khoa học tự nhiên 6 không",
+        "tìm cuốn công nghệ lớp 8",
+        "sách công nghệ 8 có trong thư viện không",
+        "cho mình mượn cuốn khoa học tự nhiên 7"
     ],
 
     "hoi_thu_tuc": [
@@ -73,6 +83,7 @@ INTENT_DATA = {
     "tim_theo_tac_gia": [
         "tìm tác phẩm của tác giả nam cao",
         "sách của tác giả dale carnegie",
+        "sách của bộ giáo dục",
         "tác phẩm của robert martin",
         "tìm sách do tác giả alec ross viết",
         "có sách nào của tác giả nam cao không",
@@ -136,5 +147,6 @@ RESPONSES = {
     "tim_theo_tac_gia": "Bạn vui lòng cho mình biết tên tác giả nhé.",
     "huong_dan_tra_sach": "Bạn mang sách cùng Thẻ sinh viên đến quầy thủ thư để trả sách nha. Nhớ trả đúng hạn để tránh bị phạt nhé!",
     "tim_theo_the_loai": "Bạn vui lòng cho mình biết thể loại sách bạn muốn tìm nhé.",
+    # Fallback khi độ tin cậy dự đoán thấp hơn CONFIDENCE_THRESHOLD (xem ai_brain.py)
     "unknown": "Xin lỗi, thư viện chưa hiểu ý bạn lắm . Bạn có thể nói rõ hơn được không?"
 }
