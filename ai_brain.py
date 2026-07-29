@@ -9,10 +9,12 @@ MODEL_PATH = os.path.join(BASE_DIR, "chatbot_model.pkl")
 VEC_PATH = os.path.join(BASE_DIR, "vectorizer.pkl")
 
 # Dưới ngưỡng này thì coi như model không đủ chắc chắn -> ép về "unknown".
-# Lưu ý: với dataset nhỏ + CalibratedClassifierCV, xác suất thật của các câu
-# ĐÚNG nghĩa thường chỉ rơi vào khoảng 0.4 - 0.6 (không cao ngất như model
-# không calibrate), nên threshold để 0.35 là hợp lý hơn 0.4-0.45.
-CONFIDENCE_THRESHOLD = 0.35
+# LƯU Ý: mỗi khi thêm intent mới, xác suất tối đa của MỌI câu (kể cả câu
+# đúng) sẽ tự nhiên giảm xuống, vì xác suất bị chia cho nhiều lớp hơn.
+# Threshold cần được hạ tương ứng khi số lượng intent tăng lên, nếu không
+# các câu đúng cũng bị rớt oan vào "unknown" (đã xảy ra ở đây: 6 intent
+# ban đầu dùng ngưỡng 0.35 ổn, nhưng lên 9 intent thì cần hạ xuống ~0.3).
+CONFIDENCE_THRESHOLD = 0.3
 
 with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
@@ -127,7 +129,7 @@ STOPWORDS_AUTHOR = {
     "tìm", "sách", "cuốn", "truyện", "quyển", "tác", "phẩm", "tác_phẩm",
     "giả", "tác_giả", "của", "do", "viết", "bởi", "cho", "mình", "muốn",
     "xem", "hỏi", "có", "không", "là", "gì", "này", "những", "các",
-    "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ","bạn"
+    "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ"
 }
 
 
@@ -230,7 +232,7 @@ def find_books_by_category(query: str, book_queryset):
 # tiếng Việt. CẬP NHẬT danh sách này mỗi khi thêm category mới vào DB.
 CATEGORY_ALIASES = {
     "tech": ["công nghệ", "khoa học", "kỹ thuật", "cntt", "tin học", "lập trình", "công nghiệp"],
-    "fiction": ["văn học", "tiểu thuyết", "truyện ngắn", "trinh thám", "văn chương"],
+    "fiction": ["văn học", "tiểu thuyết", "truyện", "trinh thám", "ngôn tình", "văn chương"],
     "business": ["kinh doanh", "kinh tế", "kỹ năng sống", "quản trị", "tài chính"],
 }
 
