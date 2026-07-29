@@ -55,8 +55,8 @@ def get_chatbot_response(user_message):
 # (vd: chữ "a" trong "Clean Code" sẽ không bị đụng tới).
 STOPWORDS_SEARCH = {
     "tìm", "kiếm", "sách", "cuốn", "truyện", "quyển", "giúp", "mình",
-    "muốn", "hỏi", "cho", "về", "có", "là", "tên", "đọc", "mượn", "của"
-    "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ", "tôi","tớ","nào"
+    "muốn", "hỏi", "cho", "về", "có", "là", "tên", "đọc", "mượn",
+    "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ"
 }
 
 MIN_QUERY_LENGTH = 2  # từ khóa dưới 2 ký tự thì coi là quá ngắn, không tìm
@@ -127,7 +127,7 @@ STOPWORDS_AUTHOR = {
     "tìm", "sách", "cuốn", "truyện", "quyển", "tác", "phẩm", "tác_phẩm",
     "giả", "tác_giả", "của", "do", "viết", "bởi", "cho", "mình", "muốn",
     "xem", "hỏi", "có", "không", "là", "gì", "này", "những", "các",
-    "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ"
+    "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ","bạn"
 }
 
 
@@ -166,3 +166,92 @@ def find_books_by_author(query: str, book_queryset):
         book for book in book_queryset.only("id", "title", "author", "available")
         if query_lower in book.author.lower()
     ]
+
+
+# ---------------------------------------------------------------------------
+# Tìm sách theo THỂ LOẠI
+# ---------------------------------------------------------------------------
+
+STOPWORDS_CATEGORY = {
+    "tìm", "sách", "cuốn", "truyện", "quyển", "thể", "loại", "thể_loại",
+    "thuộc", "cho", "mình", "muốn", "xem", "hỏi", "có", "không", "là",
+    "gì", "này", "những", "các", "liệt", "kê", "liệt_kê", "giúp", "nào",
+    "nhé", "ạ"
+}
+
+
+def extract_category_query(user_message: str) -> str:
+    """
+    Tách tên thể loại ra khỏi câu người dùng gõ, dùng chung kỹ thuật với
+    extract_search_query() / extract_author_query(): tokenize rồi lọc
+    stopword ở cấp TỪNG PHẦN của token (tách theo dấu "_").
+    """
+    if not user_message:
+        return ""
+
+    segmented = word_tokenize(user_message.lower(), format="text")
+    tokens = segmented.split()
+
+    filtered_tokens = []
+    for token in tokens:
+        parts = token.split("_")
+        kept_parts = [p for p in parts if p not in STOPWORDS_CATEGORY]
+        if kept_parts:
+            filtered_tokens.append("_".join(kept_parts))
+
+    query = " ".join(filtered_tokens).replace("_", " ").strip()
+    return query
+
+
+def find_books_by_category(query: str, book_queryset):
+    """
+    Tìm TẤT CẢ sách thuộc thể loại `query`, không phân biệt hoa/thường.
+
+    LƯU Ý QUAN TRỌNG: field `category` trong DB của bạn đang lưu bằng
+    MÃ TIẾNG ANH (vd: "tech", "fiction", "business"), trong khi người
+    dùng gõ tiếng Việt (vd: "công nghệ"). Hai chuỗi này sẽ KHÔNG BAO GIỜ
+    khớp icontains với nhau dù có xử lý Unicode đúng cách đến đâu.
+
+    Nên trước khi lọc, hàm này thử "dịch" từ khóa tiếng Việt sang đúng mã
+    category qua CATEGORY_ALIASES. Nếu không dịch được (không khớp alias
+    nào), sẽ fallback về so khớp trực tiếp — phòng trường hợp admin sau
+    này lưu category bằng tiếng Việt luôn thì vẫn hoạt động bình thường.
+    """
+    resolved_code = resolve_category_code(query)
+    match_target = resolved_code if resolved_code else query.lower()
+
+    return [
+        book for book in book_queryset.only("id", "title", "author", "available", "category")
+        if book.category and match_target in book.category.lower()
+    ]
+
+
+# Ánh xạ: mã category thật trong DB -> các cách người dùng có thể gõ bằng
+# tiếng Việt. CẬP NHẬT danh sách này mỗi khi thêm category mới vào DB.
+CATEGORY_ALIASES = {
+    "tech": ["công nghệ", "khoa học", "kỹ thuật", "cntt", "tin học", "lập trình", "công nghiệp"],
+    "fiction": ["văn học", "tiểu thuyết", "truyện ngắn", "trinh thám", "văn chương"],
+    "business": ["kinh doanh", "kinh tế", "kỹ năng sống", "quản trị", "tài chính"],
+}
+
+
+def resolve_category_code(query: str):
+    """
+    Cố gắng "dịch" từ khóa thể loại tiếng Việt sang đúng mã category
+    đang lưu trong DB (vd: "công nghệ" -> "tech"). Trả về None nếu
+    không khớp được alias nào.
+    """
+    query_lower = query.lower()
+
+    # Trường hợp người dùng gõ đúng luôn mã category (vd: "tech")
+    if query_lower in CATEGORY_ALIASES:
+        return query_lower
+
+    # So khớp theo danh sách alias tiếng Việt (so khớp 2 chiều để linh hoạt
+    # hơn: "công nghệ" khớp "công nghệ thông tin" và ngược lại)
+    for code, aliases in CATEGORY_ALIASES.items():
+        for alias in aliases:
+            if alias in query_lower or query_lower in alias:
+                return code
+
+    return None
