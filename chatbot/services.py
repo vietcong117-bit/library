@@ -10,6 +10,7 @@ from .selector import get_books_by_category
 from .selector import get_books_by_availability
 from . import selector
 from django.db import transaction
+from django.db.models import Q
 from .models import Book, Borrow, Favorite
 
 # Mượn sách
@@ -63,23 +64,40 @@ def get_book_details(book_id):
     return get_book_by_id(book_id)
 
 # Lấy sách theo thể loại
+from django.db.models import Q
+from .models import Book
+
 def get_filtered_books(category=None, available=None, sort=None):
-    qs = get_all_books()
+    qs = Book.objects.all()
 
-    if category:
-        qs = qs.filter(category=category)
+    # 1. Lọc Thể loại (Chống lệch giữa tiếng Việt và key trong DB)
+    if category and str(category).strip():
+        cat_val = str(category).strip().lower()
+        
+        # Ánh xạ cả giá trị Tiếng Việt lẫn Tiếng Anh về đúng Key lưu trong Model
+        cat_mapping = {
+            'tech': 'tech',
+            'công nghệ': 'tech',
+            'fiction': 'fiction',
+            'văn học': 'fiction',
+            'selfhelp': 'selfhelp',
+            'tự phát triển': 'selfhelp',
+            'business': 'business',
+            'kinh doanh': 'business',
+        }
+        
+        target_cat = cat_mapping.get(cat_val, cat_val)
+        qs = qs.filter(category__iexact=target_cat)
 
-    if available is not None:
-        if isinstance(available, str):
-            available_bool = available.lower() == 'true'
-        else:
-            available_bool = bool(available)
-
-        if available_bool:
+    # 2. Lọc Trạng thái (Còn sách / Hết sách)
+    if available is not None and str(available).strip() != "":
+        avail_val = str(available).strip().lower()
+        if avail_val == 'true':
             qs = qs.filter(available__gt=0)
-        else:
+        elif avail_val == 'false':
             qs = qs.filter(available__lte=0)
 
+    # 3. Sắp xếp (Khớp chính xác trường published_year trong models.py)
     sort_map = {
         'title': 'title',
         '-title': '-title',

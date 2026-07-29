@@ -2,71 +2,90 @@
 
 {% block content %}
 <input type="file" id="image-upload" style="display:none;" onchange="handleImageUpload()">
-<button type="button" onclick="document.getElementById('image-upload').click()">Gửi ảnh bìa</button
-<form class="search-form" action="{% url 'books' %}" method="get">
+<button type="button" class="btn btn-muted mb-3" onclick="document.getElementById('image-upload').click()">Gửi ảnh bìa</button>
+
+<!-- BẮT ĐẦU FORM LỌC -->
+<form method="GET" action="{% url 'books' %}" class="row g-2 mb-4 align-items-center">
     
-    <select name="category">
-        <option value="">Tất cả thể loại</option>
-        <option value="tech" {% if category == 'tech' %}selected{% endif %}>Công nghệ</option>
-        <option value="fiction" {% if category == 'fiction' %}selected{% endif %}>Văn học</option>
-        <option value="selfhelp" {% if category == 'selfhelp' %}selected{% endif %}>Tự phát triển</option>
-        <option value="business" {% if category == 'business' %}selected{% endif %}>Kinh doanh</option>
-    </select>
+    <!-- Select Thể Loại -->
+    <div class="col-md-3">
+        <select name="category" class="form-select">
+            <option value="">-- Tất cả thể loại --</option>
+            <option value="tech" {% if category == 'tech' %}selected{% endif %}>Công nghệ</option>
+            <option value="fiction" {% if category == 'fiction' %}selected{% endif %}>Văn học</option>
+            <option value="selfhelp" {% if category == 'selfhelp' %}selected{% endif %}>Tự phát triển</option>
+            <option value="business" {% if category == 'business' %}selected{% endif %}>Kinh doanh</option>
+        </select>
+    </div>
 
-    <select name="available">
-        <option value="">Tất cả</option>
-        <option value="true" {% if available == 'true' %}selected{% endif %}>Còn sách</option>
-        <option value="false" {% if available == 'false' %}selected{% endif %}>Hết sách</option>
-    </select>
+    <!-- Select Trạng Thái -->
+    <div class="col-md-3">
+        <select name="available" class="form-select">
+            <option value="">-- Tất cả trạng thái --</option>
+            <option value="true" {% if available == 'true' %}selected{% endif %}>Còn sách</option>
+            <option value="false" {% if available == 'false' %}selected{% endif %}>Hết sách</option>
+        </select>
+    </div>
 
-    <select name="sort">
-        <option value="">Sắp xếp</option>
-        <option value="title" {% if sort == 'title' %}selected{% endif %}>Tiêu đề A→Z</option>
-        <option value="-title" {% if sort == '-title' %}selected{% endif %}>Tiêu đề Z→A</option>
-        <option value="author" {% if sort == 'author' %}selected{% endif %}>Tác giả A→Z</option>
-        <option value="-author" {% if sort == '-author' %}selected{% endif %}>Tác giả Z→A</option>
-        <option value="year" {% if sort == 'year' %}selected{% endif %}>Năm tăng dần</option>
-        <option value="-year" {% if sort == '-year' %}selected{% endif %}>Năm giảm dần</option>
-        <option value="available" {% if sort == 'available' %}selected{% endif %}>Còn nhiều → ít</option>
-        <option value="-available" {% if sort == '-available' %}selected{% endif %}>Ít → nhiều</option>
-    </select>
+    <!-- Select Sắp Xếp -->
+    <div class="col-md-3">
+        <select name="sort" class="form-select">
+            <option value="">-- Sắp xếp theo --</option>
+            <option value="title" {% if sort == 'title' %}selected{% endif %}>Tên sách (A-Z)</option>
+            <option value="-title" {% if sort == '-title' %}selected{% endif %}>Tên sách (Z-A)</option>
+            <option value="year" {% if sort == 'year' %}selected{% endif %}>Năm xuất bản (Cũ nhất)</option>
+            <option value="-year" {% if sort == '-year' %}selected{% endif %}>Năm xuất bản (Mới nhất)</option>
+        </select>
+    </div>
 
-    <button type="submit">Lọc</button>
+    <!-- Nút Lọc Sách -->
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100">Lọc sách</button>
+    </div>
+
 </form>
+<!-- KẾT THÚC FORM LỌC -->
 
 <div class="books-grid">
 
     {% for book in books %}
-    <a href="{% url 'book_detail' book.id %}" class="book-link">
+    <div class="book-card">
 
-        <div class="book-card">
-
-           <img class="book-card-image"
-                src="{% if book.image %}{{ book.image.url }}{% else %}https://via.placeholder.com/200x300{% endif %}" alt="{{ book.title }}">
+        <!-- 1. CHỈ bọc phần Thông tin trong thẻ <a> để xem chi tiết -->
+        <a href="{% url 'book_detail' book.id %}" style="text-decoration: none; color: inherit; display: block;">
+            <img class="book-card-image"
+                 src="{% if book.image %}{{ book.image.url }}{% else %}https://via.placeholder.com/200x300{% endif %}" 
+                 alt="{{ book.title }}">
+            
             <div class="book-card-content">
-
                 <h3 class="book-card-title">{{ book.title }}</h3>
                 <p class="book-card-author">{{ book.author }}</p>
+            </div>
+        </a>
 
-                <div class="book-card-footer">
+        <!-- 2. Phần Footer nằm ngoài thẻ <a> để không bị kích hoạt link khi bấm trái tim -->
+        <div class="book-card-footer">
 
-                    {% if book.available > 0 %}
-                        <span class="book-status status-available">Còn sách</span>
-                    {% else %}
-                        <span class="book-status status-borrowed">Hết sách</span>
-                    {% endif %}
+            {% if book.available > 0 %}
+                <span class="book-status status-available">Còn sách</span>
+            {% else %}
+                <span class="book-status status-borrowed">Hết sách</span>
+            {% endif %}
 
-                    <div class="book-actions">
-                        <button class="btn-heart">❤️</button>
-                    </div>
-
-                </div>
-
+            <div class="book-actions">
+                <form method="POST" action="{% url 'book_favorite' book.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="btn-heart {% if book.id in favorite_book_ids or book.is_favorite %}liked{% endif %}" 
+                            title="Yêu thích">
+                        ❤️
+                    </button>
+                </form>
             </div>
 
         </div>
 
-    </a>
+    </div>
     {% endfor %}
 
 </div>
