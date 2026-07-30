@@ -513,23 +513,26 @@
 <div id="chat-popup" class="chat-popup">
     <div class="chat-header">
         <span> Bot Thư Viện</span>
-        <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;">✕</button>
+        <div>
+            <!-- Nút xóa lịch sử chat -->
+            <button onclick="clearChatHistory()" title="Xóa lịch sử chat" style="background:none; border:none; color:white; cursor:pointer; font-size: 14px; margin-right: 8px;">🗑️</button>
+            <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;">✕</button>
+        </div>
     </div>
-    <div id="chat-box" class="chat-messages">
-        <p style="background: #e2e8f0; padding: 10px; border-radius: 8px; width: fit-content; font-size: 14px; margin-top: 0;">Chào bạn! Mình có thể giúp gì cho bạn? Bạn cứ gõ tên sách hoặc gửi ảnh bìa nhé!</p>
-    </div>
-   <div class="chat-input-area" style="display: flex; align-items: center; padding: 10px;">
-    <!-- Nút chọn ảnh (ẩn input thực tế) -->
-    <input type="file" id="image-upload" accept="image/*" style="display:none;">
+   <div id="chat-box" class="chat-messages"></div>
 
-    <button onclick="document.getElementById('image-upload').click()" style="background:none; border:none; cursor:pointer; font-size: 20px; margin-right: 8px;">📷</button>
-    
-    <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 20px; outline: none;" onkeypress="if(event.key === 'Enter') sendMessage()">
-    
-    <button onclick="sendMessage()" style="margin-left: 8px; background: #6366f1; color: white; border:none; padding: 8px 16px; border-radius: 20px; cursor:pointer; font-weight: bold;">Gửi</button>
+    <div class="chat-input-area" style="display: flex; align-items: center; padding: 10px;">
+        <input type="file" id="image-upload" accept="image/*" style="display:none;">
+        <button onclick="document.getElementById('image-upload').click()" style="background:none; border:none; cursor:pointer; font-size: 20px; margin-right: 8px;">📷</button>
+        <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 20px; outline: none;" onkeypress="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()" style="margin-left: 8px; background: #6366f1; color: white; border:none; padding: 8px 16px; border-radius: 20px; cursor:pointer; font-weight: bold;">Gửi</button>
+    </div>
 </div>
 
 <script>
+const CHAT_STORAGE_KEY = 'library_chat_history';
+const CHAT_STATE_KEY = 'library_chat_is_open'; // Thêm key lưu trạng thái bật/tắt
+
 // Lấy CSRF token từ cookie
 function getCookie(name) {
     const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
@@ -542,10 +545,62 @@ function toggleProfileMenu() {
     if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
-// Bật/tắt cửa sổ Chatbot
+// CẬP NHẬT: Bật/tắt cửa sổ Chatbot và lưu trạng thái
 function toggleChat() {
     const popup = document.getElementById('chat-popup');
-    popup.style.display = (popup.style.display === 'flex') ? 'none' : 'flex';
+    const isCurrentlyOpen = popup.style.display === 'flex';
+
+    if (isCurrentlyOpen) {
+        popup.style.display = 'none';
+        localStorage.setItem(CHAT_STATE_KEY, 'false'); // Lưu trạng thái tắt
+    } else {
+        popup.style.display = 'flex';
+        localStorage.setItem(CHAT_STATE_KEY, 'true');  // Lưu trạng thái mở
+    }
+}
+
+// --- QUẢN LÝ LỊCH SỬ CHAT VỚI LOCALSTORAGE ---
+function getChatHistory() {
+    const history = localStorage.getItem(CHAT_STORAGE_KEY);
+    return history ? JSON.parse(history) : [];
+}
+
+function saveMessage(sender, content, isImage = false) {
+    const history = getChatHistory();
+    history.push({ sender, content, isImage });
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(history));
+}
+
+function renderChatHistory() {
+    const chatBox = document.getElementById('chat-box');
+    if (!chatBox) return;
+
+    const history = getChatHistory();
+
+    if (history.length === 0) {
+        const welcomeMsg = "Chào bạn! Mình có thể giúp gì cho bạn? Bạn cứ gõ tên sách hoặc gửi ảnh bìa nhé!";
+        saveMessage('bot', welcomeMsg);
+        renderChatHistory();
+        return;
+    }
+
+    chatBox.innerHTML = history.map(item => {
+        if (item.sender === 'user') {
+            if (item.isImage) {
+                return `<div style="text-align: right; margin: 10px 0;"><img src="${item.content}" style="max-width: 150px; border-radius: 8px;"></div>`;
+            }
+            return `<p style="background: #d1fae5; padding: 8px 12px; border-radius: 8px; margin-left: auto; width: fit-content; max-width: 80%; text-align: left;">${item.content}</p>`;
+        } else {
+            return `<div class="bot-message" style="background: #e2e8f0; padding: 10px; margin: 5px 0; border-radius: 8px; width: fit-content; max-width: 85%;">${item.content}</div>`;
+        }
+    }).join('');
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function clearChatHistory() {
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+    renderChatHistory();
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -553,7 +608,16 @@ document.addEventListener("DOMContentLoaded", function() {
     const chatInput = document.getElementById('chat-input');
     const imageInput = document.getElementById('image-upload');
 
-    // 1. Tắt Menu Profile khi click ra ngoài
+    // 1. Khôi phục lịch sử chat
+    renderChatHistory();
+
+    // 2. CẬP NHẬT: Kiểm tra và tự động mở lại Chatbot nếu trước đó người dùng đang mở
+    const isChatOpen = localStorage.getItem(CHAT_STATE_KEY) === 'true';
+    if (isChatOpen) {
+        document.getElementById('chat-popup').style.display = 'flex';
+    }
+
+    // 3. Tắt Menu Profile khi click ra ngoài
     document.addEventListener('click', function(e) {
         const menu = document.getElementById('profileMenu');
         const isProfileButton = e.target.closest('button[onclick*="toggleProfileMenu"]');
@@ -562,13 +626,13 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // 2. Xử lý Gửi tin nhắn Text
+    // 4. Xử lý Gửi tin nhắn Text
     window.sendMessage = function() {
         let msg = chatInput.value.trim();
         if (msg === "") return;
 
-        // Hiển thị tin nhắn người dùng
-        chatBox.innerHTML += `<p style="background: #d1fae5; padding: 8px; border-radius: 8px; margin-left: auto; width: fit-content;">${msg}</p>`;
+        saveMessage('user', msg);
+        renderChatHistory();
         chatInput.value = "";
 
         let formData = new FormData();
@@ -581,13 +645,13 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(r => r.json())
         .then(data => {
-            chatBox.innerHTML += `<div class="bot-message" style="background: #e2e8f0; padding: 10px; margin: 5px 0; border-radius: 8px;">${data.reply}</div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            saveMessage('bot', data.reply);
+            renderChatHistory();
         })
         .catch(err => console.error("Lỗi gửi tin nhắn:", err));
     };
 
-    // 3. Xử lý Gửi ảnh (Chỉ đăng ký duy nhất 1 sự kiện change tại đây)
+    // 5. Xử lý Gửi ảnh
     imageInput.addEventListener('change', function() {
         if (!this.files[0]) return;
 
@@ -595,30 +659,27 @@ document.addEventListener("DOMContentLoaded", function() {
         let formData = new FormData();
         formData.append('image', file);
 
-        // Hiển thị preview ảnh người dùng vừa tải lên
         let reader = new FileReader();
         reader.onload = (e) => {
-            chatBox.innerHTML += `<div style="text-align: right; margin: 10px 0;"><img src="${e.target.result}" style="max-width: 150px; border-radius: 8px;"></div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            saveMessage('user', e.target.result, true);
+            renderChatHistory();
+
+            fetch('/chat/', {
+                method: 'POST',
+                body: formData,
+                headers: {'X-CSRFToken': getCookie('csrftoken')}
+            })
+            .then(r => r.json())
+            .then(data => {
+                saveMessage('bot', data.reply);
+                renderChatHistory();
+            })
+            .catch(err => console.error("Lỗi gửi ảnh:", err))
+            .finally(() => {
+                imageInput.value = "";
+            });
         };
         reader.readAsDataURL(file);
-
-        // Gửi ảnh lên server
-        fetch('/chat/', {
-            method: 'POST',
-            body: formData,
-            headers: {'X-CSRFToken': getCookie('csrftoken')}
-        })
-        .then(r => r.json())
-        .then(data => {
-            chatBox.innerHTML += `<div class="bot-message" style="background: #e2e8f0; padding: 10px; margin: 5px 0; border-radius: 8px;">${data.reply}</div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        })
-        .catch(err => console.error("Lỗi gửi ảnh:", err))
-        .finally(() => {
-            // Reset input để có thể chọn lại cùng 1 ảnh nếu muốn
-            imageInput.value = "";
-        });
     });
 });
 </script>

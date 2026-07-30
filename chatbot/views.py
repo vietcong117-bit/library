@@ -24,7 +24,7 @@ from django.shortcuts import render, redirect
 from .forms import AdminAddUserForm
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth import authenticate, login
-
+from django.db import transaction
 
 import os
 import random
@@ -195,16 +195,36 @@ def checkout(request):
             messages.info(request, 'Giỏ hàng đang trống')
             return redirect('cart')
 
-        order = Order.objects.create(user=request.user, status='completed')
+        # 1. Kiểm tra xem số lượng sách trong kho có đủ để bán không
         for item in items:
-            OrderItem.objects.create(
-                order=order,
-                book=item.book,
-                quantity=item.quantity,
-                unit_price=item.book.price
-            )
-        items.delete()
-        messages.success(request, 'Thanh toán đơn hàng thành công')
+            if item.book.available < item.quantity:
+                messages.error(
+                    request, 
+                    f'Sách "{item.book.title}" chỉ còn {item.book.available} cuốn, không đủ số lượng bạn đặt ({item.quantity} cuốn).'
+                )
+                return redirect('cart')
+
+        # 2. Bắt đầu giao dịch thanh toán và trừ số lượng trong CSDL
+        with transaction.atomic():
+            order = Order.objects.create(user=request.user, status='completed')
+            
+            for item in items:
+                OrderItem.objects.create(
+                    order=order,
+                    book=item.book,
+                    quantity=item.quantity,
+                    unit_price=item.book.price
+                )
+                
+                # Cập nhật giảm cả số lượng khả dụng (available) lẫn tổng số lượng (quantity) khi bán
+                item.book.available -= item.quantity
+                item.book.quantity -= item.quantity
+                item.book.save()  # Lưu thay đổi vào CSDL
+
+            # Xóa giỏ hàng sau khi thanh toán thành công
+            items.delete()
+
+        messages.success(request, 'Thanh toán đơn hàng thành công!')
         return redirect('order_history')
 
     return render(request, 'customer/checkout.html', {'cart': cart, 'total': cart.get_total_price()})
