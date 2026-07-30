@@ -1,39 +1,226 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    /* BỐ CỤC CHUNG */
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 0 20px;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
 
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        align-items: start;
+    }
 
-<div class="dashboard-grid" style="margin-top:24px; grid-template-columns: 2fr 1fr;">
-    <div class="dashboard-card">
-        <h3>Sách vừa thêm</h3>
-        <div class="book-list-compact">
-            {% for book in recent_books %}
-            <div class="book-item-compact">
-                {% if book.image %}
-                <img src="{{ book.image.url }}" alt="">
-                {% else %}
-                <img src="https://picsum.photos/80/110?random={{ forloop.counter }}" alt="">
-                {% endif %}
-                <div>
-                    <p class="title">{{ book.title }}</p>
-                    <p class="author">{{ book.author }}</p>
+    /* CARD CHỨA NỘI DUNG */
+    .dashboard-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        border: 1px solid #f0f0f0;
+    }
+
+    .dashboard-card h3 {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-top: 0;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 12px;
+    }
+
+    /* DANH SÁCH SÁCH VỪA THÊM */
+    .book-list-compact {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+    }
+
+    .book-item-compact {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid #f1f5f9;
+        border-radius: 10px;
+        background-color: #fcfcfc;
+        transition: all 0.2s ease;
+    }
+
+    .book-item-compact:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        border-color: #e2e8f0;
+    }
+
+    .book-item-compact img {
+        width: 64px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        flex-shrink: 0;
+    }
+
+    .book-item-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .book-item-info .title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 6px 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .book-item-info .author {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* DANH SÁCH SÁCH MƯỢN NHIỀU NHẤT */
+    .ranking-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .ranking-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #f1f5f9;
+        transition: background-color 0.2s ease;
+    }
+
+    .ranking-item:hover {
+        background: #f1f5f9;
+    }
+
+    /* Huy hiệu thứ hạng */
+    .ranking-item .rank {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #eef2ff;
+        color: #4338ca;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    /* Hiệu ứng màu cho Top 1, 2, 3 */
+    .ranking-item:nth-child(1) .rank { background: #fef08a; color: #854d0e; } /* Vàng */
+    .ranking-item:nth-child(2) .rank { background: #e2e8f0; color: #334155; } /* Bạc */
+    .ranking-item:nth-child(3) .rank { background: #ffedd5; color: #9a3412; } /* Đồng */
+
+    .ranking-item .title {
+        flex-grow: 1;
+        margin: 0 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #334155;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ranking-item .count {
+        background: #ecfdf5;
+        color: #059669;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    /* TRẠNG THÁI TRỐNG */
+    .empty-text {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        font-style: italic;
+        margin: 0;
+        padding: 20px 0;
+        text-align: center;
+        grid-column: 1 / -1;
+    }
+
+    /* RESPONSIVE (Dành cho màn hình điện thoại) */
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr; /* Chuyển thành 1 cột xếp chồng */
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="dashboard-grid">
+        
+        <!-- CARD 1: SÁCH VỪA THÊM -->
+        <div class="dashboard-card">
+            <h3>Sách vừa thêm</h3>
+            <div class="book-list-compact">
+                {% for book in recent_books %}
+                <div class="book-item-compact">
+                    {% if book.image %}
+                        <img src="{{ book.image.url }}" alt="Bìa sách">
+                    {% else %}
+                        <img src="https://picsum.photos/80/110?random={{ forloop.counter }}" alt="Bìa sách">
+                    {% endif %}
+                    <div class="book-item-info">
+                        <p class="title">{{ book.title }}</p>
+                        <p class="author">{{ book.author }}</p>
+                    </div>
                 </div>
+                {% empty %}
+                    <p class="empty-text">Không có sách mới.</p>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p>Không có sách mới.</p>
-            {% endfor %}
         </div>
-    </div>
 
-    <div class="dashboard-card">
-        <h3>Sách được mượn nhiều nhất</h3>
-        <div class="ranking-list">
-            {% for item in top_borrowed %}
-            <div class="ranking-item"><div class="rank">{{ forloop.counter }}</div><div class="title">{{ item.title }}</div><div class="count">{{ item.count }}</div></div>
-            {% empty %}
-            <p>Chưa có dữ liệu mượn.</p>
-            {% endfor %}
+        <!-- CARD 2: SÁCH ĐƯỢC MƯỢN NHIỀU NHẤT -->
+        <div class="dashboard-card">
+            <h3>Sách được mượn nhiều nhất</h3>
+            <div class="ranking-list">
+                {% for item in top_borrowed %}
+                <div class="ranking-item">
+                    <div class="rank">{{ forloop.counter }}</div>
+                    <div class="title">{{ item.title }}</div>
+                    <div class="count">{{ item.count }}</div>
+                </div>
+                {% empty %}
+                    <p class="empty-text">Chưa có dữ liệu mượn.</p>
+                {% endfor %}
+            </div>
         </div>
+        
     </div>
 </div>
 

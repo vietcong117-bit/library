@@ -1,58 +1,238 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="max-width: 1000px; margin: 24px auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <h2 class="section-title">Quản lý Tài khoản</h2>
-<a href="{% url 'add_new_user' %}" class="btn btn-primary">Thêm tài khoản mới</a>    </div>
+<style>
+    .users-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px 20px;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
 
-    <div class="dashboard-card" style="padding: 0; overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <th style="padding: 16px;">#</th>
-                    <th style="padding: 16px;">Tên người dùng</th>
-                    <th style="padding: 16px;">Email</th>
-                    <th style="padding: 16px;">Vai trò</th>
-                    <th style="padding: 16px;">Trạng thái</th>
-                    <th style="padding: 16px;">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding: 16px;">{{ forloop.counter }}</td>
-                    <td style="padding: 16px;">{{ user.username }}</td>
-                    <td style="padding: 16px;">{{ user.email|default:"Chưa có" }}</td>
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .users-container h2 {
+        font-size: 28px;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .btn-add-new {
+        background-color: #2563eb;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-add-new:hover {
+        background-color: #1d4ed8;
+        transform: translateY(-2px);
+    }
+
+    .users-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+    }
+
+    .user-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 100%;
+        border: 1px solid #f0f0f0;
+        position: relative;
+    }
+
+    .user-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+    }
+
+    .user-card-content {
+        padding: 20px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .user-card-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .user-counter {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        font-weight: 600;
+        background: #f8fafc;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+
+    .user-card-email {
+        font-size: 0.95rem;
+        color: #64748b;
+        margin: 0 0 16px 0;
+    }
+
+    .user-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: auto;
+    }
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .badge-staff {
+        background: #eef2ff;
+        color: #4338ca;
+    }
+
+    .badge-user {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .badge-active {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    .badge-inactive {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .user-card-footer {
+        padding: 12px 20px;
+        border-top: 1px solid #f1f5f9;
+        background-color: #fafafa;
+        display: flex;
+        gap: 12px;
+    }
+
+    .action-btn {
+        flex: 1;
+        text-align: center;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .edit-btn {
+        background-color: #f0fdf4;
+        color: #16a34a;
+        border: 1px solid #bbf7d0;
+    }
+
+    .edit-btn:hover {
+        background-color: #16a34a;
+        color: white;
+        border-color: #16a34a;
+    }
+
+    .delete-btn {
+        background-color: #ffeeec;
+        color: #e02424;
+        border: 1px solid #f8d7da;
+    }
+
+    .delete-btn:hover {
+        background-color: #e02424;
+        color: white;
+        border-color: #e02424;
+    }
+
+    .empty-text {
+        color: #94a3b8;
+        font-size: 1rem;
+        font-style: italic;
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 40px 0;
+    }
+</style>
+
+<div class="users-container">
+    <div class="header-actions">
+        <h2>Quản lý Tài khoản</h2>
+        <a href="{% url 'add_new_user' %}" class="btn-add-new">Thêm tài khoản mới</a>
+    </div>
+
+    <div class="users-grid">
+        {% for user in users %}
+            <div class="user-card">
+                <div class="user-card-content">
+                    <div class="user-header-top">
+                        <h3 class="user-card-title">{{ user.username }}</h3>
+                        <span class="user-counter">#{{ forloop.counter }}</span>
+                    </div>
                     
-                    <td style="padding: 16px;">
+                    <p class="user-card-email">{{ user.email|default:"Chưa có" }}</p>
+                    
+                    <div class="user-badges">
                         {% if user.is_staff %}
-                            <span style="background: #eef2ff; color: #4338ca; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Staff</span>
+                            <span class="badge badge-staff">Staff</span>
                         {% else %}
-                            <span style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 12px;">User</span>
+                            <span class="badge badge-user">User</span>
                         {% endif %}
-                    </td>
-                    
-                    <td style="padding: 16px;">
+
                         {% if user.is_active %}
-                            <span style="color: #166534; font-weight: 600;">● Hoạt động</span>
+                            <span class="badge badge-active">● Hoạt động</span>
                         {% else %}
-                            <span style="color: #991b1b; font-weight: 600;">● Không hoạt động</span>
+                            <span class="badge badge-inactive">● Không hoạt động</span>
                         {% endif %}
-                    </td>
-                    
-                    <td style="padding: 16px;">
-                        <a href="{% url 'admin_user_edit' user.id %}" style="margin-right: 10px;">Sửa</a>
-                        {% if user.id != request.user.id %}
-                            <a href="{% url 'admin_user_delete' user.id %}" style="color: red;">Xóa</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" style="padding: 20px; text-align: center;">Không có tài khoản.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </div>
+                </div>
+
+                <div class="user-card-footer">
+                    <a href="{% url 'admin_user_edit' user.id %}" class="action-btn edit-btn">Sửa</a>
+                    {% if user.id != request.user.id %}
+                        <a href="{% url 'admin_user_delete' user.id %}" class="action-btn delete-btn">Xóa</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p class="empty-text">Không có tài khoản.</p>
+        {% endfor %}
     </div>
 </div>
+
 {% endblock %}

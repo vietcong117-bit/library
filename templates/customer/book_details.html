@@ -3,90 +3,307 @@
 
 {% block content %}
 <style>
-    /* CSS đồng bộ cho trang chi tiết */
-    .book-detail-container { gap: 40px; display: flex; }
-    .badge-group { display: flex; gap: 8px; margin-bottom: 24px; }
-    .badge-category { background: #eef2ff; color: #4338ca; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 600; }
-    .badges { padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 600; }
+    .book-details-page {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #334155;
+    }
+
+    .back-link {
+        text-decoration: none;
+        color: #64748b;
+        margin-bottom: 24px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+    .back-link:hover {
+        color: #4f46e5;
+    }
+
+    .book-card-main {
+        display: flex;
+        gap: 40px;
+        background: #ffffff;
+        padding: 32px;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+    }
+
+    .book-image-wrapper {
+        flex: 0 0 300px;
+    }
+    .book-image-wrapper img {
+        width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        aspect-ratio: 2/3;
+        object-fit: cover;
+    }
+    .book-image-placeholder {
+        width: 100%;
+        aspect-ratio: 2/3;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 64px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .book-info {
+        flex: 1;
+    }
+    .book-title {
+        font-size: 32px;
+        margin: 0 0 12px 0;
+        color: #0f172a;
+        font-weight: 800;
+        line-height: 1.3;
+    }
+    .book-meta {
+        color: #64748b;
+        margin-bottom: 24px;
+        font-size: 16px;
+    }
     
-    .reviews-section { margin-top: 40px; background: white; padding: 32px; border-radius: 16px; border: 1px solid #e2e8f0; }
-    .modern-form-group p { margin-bottom: 10px; }
-    .modern-form-group input, .modern-form-group textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 6px; }
-    .btn-submit-review { background: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-    .btn-submit-review:hover { background: #4338ca; }
+    .badge-group {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+    }
+    .badge {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .badge-category { background: #eef2ff; color: #4338ca; }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 32px;
+    }
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-primary { 
+        background: #4f46e5; 
+        color: white; 
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); 
+    }
+    .btn-primary:hover:not(:disabled) { 
+        background: #4338ca; 
+        transform: translateY(-2px); 
+    }
+    .btn-primary:disabled { 
+        background: #94a3b8; 
+        cursor: not-allowed; 
+        box-shadow: none; 
+    }
+    .btn-outline { 
+        background: white; 
+        color: #475569; 
+        border: 1px solid #cbd5e1; 
+    }
+    .btn-outline:hover { 
+        background: #f8fafc; 
+        border-color: #94a3b8; 
+    }
+
+    .description-section {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 24px;
+    }
+    .section-title {
+        margin: 0 0 16px 0;
+        font-size: 20px;
+        color: #0f172a;
+        font-weight: 700;
+    }
+    .description-text {
+        color: #475569;
+        line-height: 1.7;
+    }
+
+    .reviews-section {
+        margin-top: 32px;
+        background: white;
+        padding: 32px;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.02);
+    }
+    .review-item {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 20px 0;
+    }
+    .review-item:last-child {
+        border-bottom: none;
+    }
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    .reviewer-name { color: #0f172a; }
+    .review-rating { 
+        color: #f59e0b; 
+        background: #fef3c7; 
+        padding: 4px 10px; 
+        border-radius: 12px; 
+        font-size: 13px; 
+    }
+    .review-text { 
+        margin: 0; 
+        color: #475569; 
+        line-height: 1.6; 
+    }
+    .no-reviews { color: #94a3b8; font-style: italic; }
+
+    .review-form-container {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e2e8f0;
+    }
+    .modern-form-group p { margin-bottom: 12px; }
+    .modern-form-group input, 
+    .modern-form-group textarea, 
+    .modern-form-group select { 
+        width: 100%; 
+        padding: 12px; 
+        border: 1px solid #cbd5e1; 
+        border-radius: 8px; 
+        margin-top: 6px;
+        font-family: inherit;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .modern-form-group input:focus, 
+    .modern-form-group textarea:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+    }
+
+    @media (max-width: 768px) {
+        .book-card-main {
+            flex-direction: column;
+            padding: 24px;
+            gap: 24px;
+        }
+        .book-image-wrapper {
+            flex: auto;
+            max-width: 100%;
+        }
+        .action-buttons {
+            flex-direction: column;
+        }
+        .action-buttons form, 
+        .action-buttons button {
+            width: 100%;
+        }
+    }
 </style>
 
-<div class="book-details-page" style="max-width: 1000px; margin: 40px auto; padding: 0 20px; font-family: 'Inter', system-ui, sans-serif;">
-    <a href="{% url 'books' %}" style="text-decoration: none; color: #64748b; margin-bottom: 24px; display: inline-block;">← Quay lại danh sách</a>
+<div class="book-details-page">
+    <a href="{% url 'books' %}" class="back-link">← Quay lại danh sách</a>
 
-    <div class="book-detail-container" style="background: white; padding: 32px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-        <div class="book-left" style="flex: 0 0 300px;">
+    <div class="book-card-main">
+        
+        <div class="book-image-wrapper">
             {% if book.image %}
-                <img src="{{ book.image.url }}" alt="{{ book.title }}" style="width: 100%; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); aspect-ratio: 2/3; object-fit: cover;">
+                <img src="{{ book.image.url }}" alt="{{ book.title }}">
             {% else %}
-                <div style="width: 100%; height: 400px; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 64px; border-radius: 12px; border: 1px solid #e2e8f0;">📘</div>
+                <div class="book-image-placeholder">📘</div>
             {% endif %}
         </div>
 
-        <div class="book-right" style="flex: 1; padding-left: 20px;">
-            <h1 style="font-size: 36px; margin: 0 0 12px 0; color: #0f172a; font-weight: 800;">{{ book.title }}</h1>
-            <p style="color: #64748b; margin-bottom: 24px; font-size: 16px;">Tác giả: <strong>{{ book.author }}</strong> · Năm: {{ book.published_year }}</p>
+        <div class="book-info">
+            <h1 class="book-title">{{ book.title }}</h1>
+            <p class="book-meta">Tác giả: <strong>{{ book.author }}</strong> · Năm: {{ book.published_year }}</p>
 
             <div class="badge-group">
-                <span class="badge-category">{{ book.get_category_display }}</span>
+                <span class="badge badge-category">{{ book.get_category_display }}</span>
                 {% if book.available > 0 %}
-                    <span class="badges" style="background: #dcfce7; color: #166534;">Còn {{ book.available }} cuốn</span>
+                    <span class="badge badge-success">Còn {{ book.available }} cuốn</span>
                 {% else %}
-                    <span class="badges" style="background: #fee2e2; color: #991b1b;">Tạm hết sách</span>
+                    <span class="badge badge-danger">Tạm hết sách</span>
                 {% endif %}
             </div>
 
-            <div style="display: flex; gap: 12px; margin-bottom: 32px;">
-                <form method="post" action="{% url 'book_borrow' book.id %}">
+            <div class="action-buttons">
+                <form method="post" action="{% url 'book_borrow' book.id %}" style="margin: 0;">
                     {% csrf_token %}
-                    <button class="btn btn-primary" {% if book.available <= 0 %}disabled{% endif %}>Mượn ngay</button>
+                    <button class="btn btn-primary" {% if book.available <= 0 %}disabled{% endif %}>
+                        Mượn ngay
+                    </button>
                 </form>
-                <form method="post" action="{% url 'add_to_cart' book.id %}">
+                
+                <form method="post" action="{% url 'add_to_cart' book.id %}" style="margin: 0;">
                     {% csrf_token %}
                     <button class="btn btn-outline">🛒 Giỏ hàng</button>
                 </form>
             </div>
 
-            <div style="border-top: 1px solid #f1f5f9; padding-top: 24px;">
-                <h3 style="margin-bottom: 12px; font-size: 20px; color: #0f172a;">Mô tả chi tiết</h3>
-                <p style="color: #475569; line-height: 1.7;">{{ book.description|linebreaks }}</p>
+            <div class="description-section">
+                <h3 class="section-title">Mô tả chi tiết</h3>
+                <div class="description-text">
+                    {{ book.description|linebreaks }}
+                </div>
             </div>
         </div>
     </div>
 
     <div class="reviews-section">
-        <h3 style="margin-bottom: 24px; font-size: 20px;">Đánh giá của độc giả</h3>
+        <h3 class="section-title">Đánh giá của độc giả</h3>
+        
         {% for review in reviews %}
-            <div style="border-bottom: 1px solid #f1f5f9; padding: 16px 0;">
-                <div style="display: flex; justify-content: space-between; font-weight: 600;">
-                    <span>{{ review.user.username }}</span>
-                    <span style="color: #fbbf24;">★ {{ review.rating }}/5</span>
+            <div class="review-item">
+                <div class="review-header">
+                    <span class="reviewer-name">{{ review.user.username }}</span>
+                    <span class="review-rating">★ {{ review.rating }}/5</span>
                 </div>
-                <p style="margin: 8px 0; color: #475569;">{{ review.comment }}</p>
+                <p class="review-text">{{ review.comment }}</p>
             </div>
         {% empty %}
-            <p style="color: #94a3b8;">Chưa có đánh giá nào.</p>
+            <p class="no-reviews">Chưa có đánh giá nào.</p>
         {% endfor %}
 
-        {% if user.is_authenticated %}
-            <div style="margin-top: 32px;">
-                <h4 style="margin-bottom: 16px;">Viết đánh giá của bạn</h4>
+        <div class="review-form-container">
+            {% if user.is_authenticated %}
+                <h4 class="section-title" style="font-size: 18px;">Viết đánh giá của bạn</h4>
                 <form method="post" action="{% url 'add_review' book.id %}">
                     {% csrf_token %}
                     <div class="modern-form-group">
                         {{ review_form.as_p }}
                     </div>
-                    <button type="submit" class="btn-submit-review">Gửi đánh giá</button>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 12px;">Gửi đánh giá</button>
                 </form>
-            </div>
-        {% else %}
-            <p style="margin-top: 20px;"><a href="{% url 'login' %}">Đăng nhập</a> để viết đánh giá.</p>
-        {% endif %}
+            {% else %}
+                <p><a href="{% url 'login' %}" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Đăng nhập</a> để viết đánh giá.</p>
+            {% endif %}
+        </div>
     </div>
+
 </div>
 {% endblock %}

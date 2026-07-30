@@ -1,45 +1,196 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Sách đã mượn</h2>
+<style>
+    /* BỐ CỤC CHUNG */
+    .borrows-container {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 0 20px;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
 
-<div class="borrowed-list">
-    {% for b in borrows %}
-    <div class="borrowed-item" style="border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 16px; border-radius: 8px; display: flex; justify-content: space-between;">
-        <div class="borrowed-item-info" style="display: flex; gap: 16px;">
-            <img class="borrowed-item-img" 
-                src="{% if b.book.image %}{{ b.book.image.url }}{% else %}https://via.placeholder.com/80x110{% endif %}" 
-                alt="{{ b.book.title }}" style="width: 80px; height: 110px; object-fit: cover; border-radius: 4px;">
+    .borrows-container h2 {
+        font-size: 28px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-top: 0;
+        margin-bottom: 24px;
+    }
+
+    /* LƯỚI HIỂN THỊ SÁCH MƯỢN */
+    .borrows-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 24px;
+    }
+
+    /* THẺ SÁCH ĐÃ MƯỢN */
+    .borrow-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #f0f0f0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .borrow-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+    }
+
+    /* THÂN THẺ (Ảnh & Thông tin) */
+    .borrow-card-body {
+        display: flex;
+        padding: 20px;
+        gap: 16px;
+        flex-grow: 1;
+    }
+
+    .borrow-img {
+        width: 90px;
+        height: 130px;
+        object-fit: cover;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        flex-shrink: 0;
+    }
+
+    .borrow-info {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    .borrow-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 4px 0;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .borrow-author {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin: 0 0 12px 0;
+    }
+
+    .borrow-dates {
+        font-size: 0.85rem;
+        color: #475569;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: auto; /* Đẩy xuống dưới cùng của phần info */
+    }
+
+    .borrow-dates span {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    /* CHÂN THẺ (Trạng thái) */
+    .borrow-card-footer {
+        padding: 14px 20px;
+        background-color: #f8fafc;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* BADGE DUYỆT */
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-approved { background: #dcfce7; color: #166534; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+
+    /* TRẠNG THÁI TRẢ SÁCH */
+    .return-status {
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+    .status-not-returned { color: #ea580c; } /* Màu cam */
+    .status-returned { color: #059669; }     /* Màu xanh lá */
+
+    /* TRẠNG THÁI TRỐNG */
+    .empty-text {
+        color: #94a3b8;
+        font-size: 1rem;
+        font-style: italic;
+        text-align: center;
+        padding: 40px 0;
+        grid-column: 1 / -1;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px dashed #cbd5e1;
+    }
+</style>
+
+<div class="borrows-container">
+    <h2>Sách đã mượn</h2>
+
+    <div class="borrows-grid">
+        {% for b in borrows %}
+        <div class="borrow-card">
             
-            <div class="borrowed-item-details">
-                <h4 style="margin: 0 0 4px 0;">{{ b.book.title }}</h4>
-                <p style="margin: 0; color: #64748b; font-size: 14px;">{{ b.book.author }}</p>
-                <p style="margin: 4px 0; font-size: 13px;">Ngày mượn: {{ b.borrow_date }}</p>
-                <p style="margin: 4px 0; font-size: 13px;">Hạn trả: {{ b.due_date }}</p>
+            <!-- Phần thân: Ảnh và Thông tin sách -->
+            <div class="borrow-card-body">
+                <img class="borrow-img" 
+                    src="{% if b.book.image %}{{ b.book.image.url }}{% else %}https://via.placeholder.com/80x110{% endif %}" 
+                    alt="{{ b.book.title }}">
                 
-                <div style="margin-top: 8px;">
+                <div class="borrow-info">
+                    <h4 class="borrow-title">{{ b.book.title }}</h4>
+                    <p class="borrow-author">{{ b.book.author }}</p>
+                    
+                    <div class="borrow-dates">
+                        <div>Ngày mượn: <span>{{ b.borrow_date }}</span></div>
+                        <div>Hạn trả: <span>{{ b.due_date }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phần chân: Trạng thái duyệt và Trạng thái trả -->
+            <div class="borrow-card-footer">
+                <div>
                     {% if b.status == 'pending' %}
-                        <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Đang chờ duyệt</span>
+                        <span class="status-badge status-pending">Đang chờ duyệt</span>
                     {% elif b.status == 'approved' %}
-                        <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Đã duyệt</span>
+                        <span class="status-badge status-approved">Đã duyệt</span>
                     {% else %}
-                        <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Đã từ chối</span>
+                        <span class="status-badge status-rejected">Đã từ chối</span>
+                    {% endif %}
+                </div>
+
+                <div class="return-status">
+                    {% if not b.return_date %}
+                        <span class="status-not-returned">Chưa trả ({{ b.due_date }})</span>
+                    {% else %}
+                        <span class="status-returned">✓ Đã trả</span>
                     {% endif %}
                 </div>
             </div>
+            
         </div>
-
-        <div class="borrowed-due">
-            {% if not b.return_date %}
-                <span class="due-date">{{ b.due_date }}</span>
-            {% else %}
-                <span>Đã trả</span>
-            {% endif %}
-        </div>
+        {% empty %}
+        <p class="empty-text">Bạn chưa mượn cuốn sách nào.</p>
+        {% endfor %}
     </div>
-    {% empty %}
-    <p>Bạn chưa mượn cuốn sách nào.</p>
-    {% endfor %}
 </div>
 
 {% endblock %}

@@ -1,15 +1,46 @@
 {% extends "base.html" %}
 
 {% block content %}
-<input type="file" id="image-upload" style="display:none;" onchange="handleImageUpload()">
-<button type="button" class="btn btn-muted mb-3" onclick="document.getElementById('image-upload').click()">Gửi ảnh bìa</button>
 
-<!-- BẮT ĐẦU FORM LỌC -->
-<form method="GET" action="{% url 'books' %}" class="row g-2 mb-4 align-items-center">
+<style>
+    .horizontal-filter {
+        display: flex;
+        gap: 15px; 
+        align-items: center; 
+        margin-bottom: 30px;
+    }
     
-    <!-- Select Thể Loại -->
-    <div class="col-md-3">
-        <select name="category" class="form-select">
+    .horizontal-filter > div {
+        flex: 1;
+    }
+
+    .horizontal-filter select,
+    .horizontal-filter button {
+        width: 100%;
+        height: 42px; 
+        border-radius: 8px; 
+        border: 1px solid #ccc;
+        padding: 0 10px;
+        font-family: inherit;
+    }
+
+    .horizontal-filter button {
+        background-color: #7b52ff; 
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .horizontal-filter button:hover {
+        opacity: 0.9;
+    }
+</style>
+
+<form method="GET" action="{% url 'books' %}" class="horizontal-filter">
+    
+    <div>
+        <select name="category">
             <option value="">-- Tất cả thể loại --</option>
             <option value="tech" {% if category == 'tech' %}selected{% endif %}>Công nghệ</option>
             <option value="fiction" {% if category == 'fiction' %}selected{% endif %}>Văn học</option>
@@ -18,18 +49,16 @@
         </select>
     </div>
 
-    <!-- Select Trạng Thái -->
-    <div class="col-md-3">
-        <select name="available" class="form-select">
+    <div>
+        <select name="available">
             <option value="">-- Tất cả trạng thái --</option>
             <option value="true" {% if available == 'true' %}selected{% endif %}>Còn sách</option>
             <option value="false" {% if available == 'false' %}selected{% endif %}>Hết sách</option>
         </select>
     </div>
 
-    <!-- Select Sắp Xếp -->
-    <div class="col-md-3">
-        <select name="sort" class="form-select">
+    <div>
+        <select name="sort">
             <option value="">-- Sắp xếp theo --</option>
             <option value="title" {% if sort == 'title' %}selected{% endif %}>Tên sách (A-Z)</option>
             <option value="-title" {% if sort == '-title' %}selected{% endif %}>Tên sách (Z-A)</option>
@@ -38,20 +67,18 @@
         </select>
     </div>
 
-    <!-- Nút Lọc Sách -->
-    <div class="col-md-3">
-        <button type="submit" class="btn btn-primary w-100">Lọc sách</button>
+    <div>
+        <button type="submit">Lọc sách</button>
     </div>
 
 </form>
-<!-- KẾT THÚC FORM LỌC -->
+
 
 <div class="books-grid">
 
     {% for book in books %}
     <div class="book-card">
 
-        <!-- 1. CHỈ bọc phần Thông tin trong thẻ <a> để xem chi tiết -->
         <a href="{% url 'book_detail' book.id %}" style="text-decoration: none; color: inherit; display: block;">
             <img class="book-card-image"
                  src="{% if book.image %}{{ book.image.url }}{% else %}https://via.placeholder.com/200x300{% endif %}" 
@@ -63,7 +90,6 @@
             </div>
         </a>
 
-        <!-- 2. Phần Footer nằm ngoài thẻ <a> để không bị kích hoạt link khi bấm trái tim -->
         <div class="book-card-footer">
 
             {% if book.available > 0 %}

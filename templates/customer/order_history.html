@@ -1,34 +1,204 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="max-width:960px; margin:24px auto;">
+<style>
+    
+    .orders-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px 20px;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    .orders-container h2 {
+        font-size: 28px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-top: 0;
+        margin-bottom: 24px;
+    }
+
+    
+    .orders-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 24px;
+    }
+
+    
+    .order-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 100%;
+        border: 1px solid #f0f0f0;
+    }
+
+    .order-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+    }
+
+    
+    .order-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        background-color: #f8fafc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .order-id {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 1.1rem;
+        margin: 0;
+    }
+
+    .order-date {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    
+    .order-body {
+        padding: 20px;
+        flex-grow: 1;
+    }
+
+    .order-items-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #475569;
+        margin: 0 0 12px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .order-items-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .order-item {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        border-bottom: 1px dashed #e2e8f0;
+        padding-bottom: 12px;
+    }
+
+    .order-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .item-name {
+        font-weight: 600;
+        color: #334155;
+        line-height: 1.4;
+    }
+
+    .item-calc {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .item-calc-total {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    
+    .order-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #f1f5f9;
+        background-color: #ffffff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .order-status {
+        background: #eef2ff;
+        color: #4338ca;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .order-total {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #e02424;
+        margin: 0;
+    }
+
+  
+    .empty-text {
+        color: #94a3b8;
+        font-size: 1rem;
+        font-style: italic;
+        text-align: center;
+        padding: 40px 0;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px dashed #cbd5e1;
+    }
+</style>
+
+<div class="orders-container">
     <h2>Lịch sử đơn hàng</h2>
 
     {% if orders %}
-        {% for order in orders %}
-            <div style="background:#fff; padding:20px; border-radius:10px; border:1px solid #e0e0e0; margin-bottom:18px;">
-                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
-                    <div>
-                        <p style="margin:0;"><strong>Đơn hàng #{{ order.id }}</strong></p>
-                        <p style="margin:4px 0 0; color:#666;">Ngày: {{ order.created_at|date:'d/m/Y H:i' }}</p>
+        <div class="orders-grid">
+            {% for order in orders %}
+                <div class="order-card">
+                    
+                   
+                    <div class="order-header">
+                        <h3 class="order-id">Đơn hàng #{{ order.id }}</h3>
+                        <p class="order-date">{{ order.created_at|date:'d/m/Y H:i' }}</p>
                     </div>
-                    <div style="text-align:right;">
-                        <p style="margin:0;">Trạng thái: <strong>{{ order.get_status_display }}</strong></p>
-                        <p style="margin:4px 0 0;">Tổng: <strong>{{ order.get_total }} đ</strong></p>
+                    
+                   
+                    <div class="order-body">
+                        <h4 class="order-items-title">Chi tiết sản phẩm</h4>
+                        <ul class="order-items-list">
+                            {% for item in order.items.all %}
+                                <li class="order-item">
+                                    <span class="item-name">{{ item.book.title }}</span>
+                                    <span class="item-calc">
+                                        {{ item.quantity }} x {{ item.unit_price }} đ = <span class="item-calc-total">{{ item.get_total }} đ</span>
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
                     </div>
+                    
+                
+                    <div class="order-footer">
+                        <span class="order-status">{{ order.get_status_display }}</span>
+                        <span class="order-total">{{ order.get_total }} đ</span>
+                    </div>
+
                 </div>
-                <div style="border-top:1px solid #eee; padding-top:14px;">
-                    <h4>Chi tiết sản phẩm</h4>
-                    <ul style="margin:0; padding-left:18px;">
-                        {% for item in order.items.all %}
-                            <li style="margin-bottom:8px;">{{ item.book.title }} — {{ item.quantity }} x {{ item.unit_price }} đ = {{ item.get_total }} đ</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     {% else %}
-        <p>Bạn chưa có đơn hàng nào.</p>
+        <p class="empty-text">Bạn chưa có đơn hàng nào.</p>
     {% endif %}
 </div>
 {% endblock %}
