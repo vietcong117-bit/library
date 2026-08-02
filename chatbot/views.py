@@ -1,56 +1,56 @@
-# truy vấn
-
-from urllib import response
-
-from urllib import response
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from django.contrib.auth.models import User
-from django.db.models import Count, Avg
-from django.utils import timezone
-from datetime import timedelta
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
-from .services import get_filtered_books, get_book_details, search_books_by_title, borrow_book, toggle_favorite, get_user_borrows, get_user_favorites
-from .forms import RegisterForm, BookForm, UserEditForm, ProfileEditForm, ReviewForm
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from .models import Book, Favorite, Borrow, UserProfile, Cart, CartItem, Order, OrderItem, Review
-from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render, redirect
-from .forms import AdminAddUserForm
-from django.contrib.auth.forms import SetPasswordForm
-from django.contrib.auth import authenticate, login
-from django.db import transaction
-
 import os
+import json
 import random
 import difflib
-import joblib
-from django.views.decorators.csrf import csrf_exempt
-from django.core.files.storage import FileSystemStorage
-from django.conf import settings
+from datetime import timedelta
+from .models import Book, Category  
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.contrib import messages
+from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm, AuthenticationForm
+from django.db.models import Count, Avg
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db import transaction
 from django.http import JsonResponse
-from ai_brain import get_chatbot_response
-intent_model = None
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from rapidfuzz import fuzz
+# Import Models & Forms
+from .models import Book, Favorite, Borrow, UserProfile, Cart, CartItem, Order, OrderItem, Review
+from .forms import RegisterForm, BookForm, UserEditForm, ProfileEditForm, ReviewForm, AdminAddUserForm
+from .services import (
+    get_filtered_books, get_book_details, search_books_by_title, 
+    toggle_favorite, get_user_borrows, get_user_favorites
+)
 
+# Import AI & Computer Vision Modules
+from ai_brain import (
+    get_chatbot_response, extract_search_query, is_query_too_short, 
+    find_book_by_query, extract_author_query, find_books_by_author, 
+    extract_category_query, find_books_by_category
+)
+from vision_brain import extract_text_from_image, predict_book_category
 
+# ==========================================
+# 1. USER & CUSTOMER VIEWS
+# ==========================================
 
 @login_required
 def dashboard(request):
-    # Tổng số sách
     total_books = Book.objects.count()
-
     borrowed_count = Borrow.objects.filter(return_date__isnull=True).count()
-
     favorites_count = Favorite.objects.count()
     total_orders = Order.objects.count()
-
     active_users = User.objects.filter(is_active=True).count()
-    due_soon_count = Borrow.objects.filter(return_date__isnull=True, due_date__lte=timezone.now().date() + timedelta(days=5)).count()
+    due_soon_count = Borrow.objects.filter(
+        return_date__isnull=True, 
+        due_date__lte=timezone.now().date() + timedelta(days=5)
+    ).count()
 
     recent_books = Book.objects.order_by('-created_at')[:5]
 
@@ -75,32 +75,47 @@ def dashboard(request):
         'total_orders': total_orders,
         'due_soon_count': due_soon_count,
     }
-
     return render(request, "customer/dashboard.html", context)
 
+def home(request):
+    return HttpResponse("Chatbot đã sẵn sàng!")
+
 def books(request):
-    category = request.GET.get("category", "")
-    available = request.GET.get("available", "")
-    sort = request.GET.get("sort", "")
+    category_slug = request.GET.get('category', '')
+    available = request.GET.get('available', '')
+    sort = request.GET.get('sort', '')
 
-    # Gọi service lọc
-    books_list = get_filtered_books(
-        category=category,
-        available=available,
-        sort=sort,
-    )
+    book_list = Book.objects.all()
 
-    return render(request, "customer/books.html", {
-        "books": books_list, 
-        "category": category, 
-        "available": available, 
-        "sort": sort
-    })
+    if category_slug:
+        book_list = book_list.filter(category__code__iexact=category_slug)
+
+    if available:
+        if available == 'true':
+            book_list = book_list.filter(quantity__gt=0)
+        elif available == 'false':
+            book_list = book_list.filter(quantity=0)
+
+    if sort:
+        book_list = book_list.order_by(sort)
+
+    categories = Category.objects.all()
+
+    context = {
+        'books': book_list,
+        'categories': categories,
+        'category': category_slug,
+        'available': available,
+        'sort': sort,
+    }
+    
+    return render(request, 'customer/books.html', context)
 
 def book_details(request, book_id):
     book = get_book_details(book_id)
     if not book:
         return HttpResponse("Book not found", status=404)
+    
     is_favorite = False
     if request.user.is_authenticated:
         is_favorite = Favorite.objects.filter(user=request.user, book=book).exists()
@@ -115,7 +130,6 @@ def book_details(request, book_id):
         "review_form": ReviewForm(),
         "average_rating": average_rating,
     })
-
 
 @login_required
 def book_borrow(request, book_id):
@@ -135,7 +149,6 @@ def book_borrow(request, book_id):
     messages.success(request, "Đã gửi yêu cầu mượn sách, vui lòng chờ Admin duyệt.")
     return redirect('borrowed')
 
-
 @login_required
 def book_favorite(request, book_id):
     if request.method != 'POST':
@@ -143,7 +156,6 @@ def book_favorite(request, book_id):
 
     is_fav, action = toggle_favorite(request.user, book_id)
 
-    # Nếu dùng JS/AJAX gọi lên thì trả về JSON (rất tốt)
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return JsonResponse({'is_favorite': is_fav, 'action': action})
 
@@ -152,7 +164,6 @@ def book_favorite(request, book_id):
     else:
         messages.info(request, "Đã bỏ yêu thích")
 
-    # THAY ĐỔI TẠI ĐÂY: Quay lại trang người dùng vừa đứng thay vì bắt buộc chuyển sang book_detail
     return redirect(request.META.get('HTTP_REFERER', 'books'))
 
 def book_search(request):
@@ -160,31 +171,81 @@ def book_search(request):
     category = request.GET.get("category")
     available = request.GET.get("available")
 
-    if available is not None and available != "":
-        available_bool = available.lower() == "true"
-    else:
-        available_bool = None
-
+    available_bool = (available.lower() == "true") if available else None
     sort = request.GET.get("sort")
 
-    books = search_books_by_title(title, category=category, available=available_bool, sort=sort)
-    return render(request, "customer/book_search.html", {"books": books, "title": title, "category": category, "available": available, "sort": sort})
+    books_qs = search_books_by_title(title, category=category, available=available_bool, sort=sort)
+    return render(request, "customer/book_search.html", {
+        "books": books_qs, "title": title, "category": category, 
+        "available": available, "sort": sort
+    })
 
 @login_required
 def borrowed(request):
-    if not request.user.is_authenticated:
-        return redirect('books')
-
     borrows = get_user_borrows(request.user)
     return render(request, "customer/borrowed.html", {"borrows": borrows})
 
 @login_required
 def favorites(request):
-    if not request.user.is_authenticated:
-        return redirect('books')
-
     favs = get_user_favorites(request.user)
     return render(request, "customer/favorites.html", {"favs": favs})
+
+# ==========================================
+# 2. CART & CHECKOUT
+# ==========================================
+
+@login_required
+def cart_view(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    return render(request, 'customer/cart.html', {'cart': cart})
+
+@login_required
+def add_to_cart(request, book_id):
+    if request.method != 'POST':
+        return HttpResponseForbidden()
+    
+    book = get_object_or_404(Book, id=book_id)
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    
+    cart_item, item_created = CartItem.objects.get_or_create(cart=cart, book=book)
+    if not item_created:
+        cart_item.quantity += 1
+        cart_item.save()
+    
+    messages.success(request, f'Đã thêm "{book.title}" vào giỏ hàng')
+    return redirect('cart')
+
+@login_required
+def remove_from_cart(request, item_id):
+    if request.method != 'POST':
+        return HttpResponseForbidden()
+    
+    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    cart_item.delete()
+    messages.success(request, 'Đã xóa khỏi giỏ hàng')
+    return redirect('cart')
+
+@login_required
+def update_cart_item(request, item_id):
+    if request.method != 'POST':
+        return HttpResponseForbidden()
+    
+    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    quantity = request.POST.get('quantity', 1)
+    
+    try:
+        quantity = int(quantity)
+        if quantity > 0:
+            cart_item.quantity = quantity
+            cart_item.save()
+            messages.success(request, 'Cập nhật giỏ hàng')
+        else:
+            cart_item.delete()
+            messages.success(request, 'Đã xóa khỏi giỏ hàng')
+    except ValueError:
+        messages.error(request, 'Số lượng không hợp lệ')
+    
+    return redirect('cart')
 
 @login_required
 def checkout(request):
@@ -195,7 +256,6 @@ def checkout(request):
             messages.info(request, 'Giỏ hàng đang trống')
             return redirect('cart')
 
-        # 1. Kiểm tra xem số lượng sách trong kho có đủ để bán không
         for item in items:
             if item.book.available < item.quantity:
                 messages.error(
@@ -204,24 +264,17 @@ def checkout(request):
                 )
                 return redirect('cart')
 
-        # 2. Bắt đầu giao dịch thanh toán và trừ số lượng trong CSDL
         with transaction.atomic():
             order = Order.objects.create(user=request.user, status='completed')
-            
             for item in items:
                 OrderItem.objects.create(
-                    order=order,
-                    book=item.book,
-                    quantity=item.quantity,
-                    unit_price=item.book.price
+                    order=order, book=item.book, 
+                    quantity=item.quantity, unit_price=item.book.price
                 )
-                
-                # Cập nhật giảm cả số lượng khả dụng (available) lẫn tổng số lượng (quantity) khi bán
                 item.book.available -= item.quantity
                 item.book.quantity -= item.quantity
-                item.book.save()  # Lưu thay đổi vào CSDL
+                item.book.save()
 
-            # Xóa giỏ hàng sau khi thanh toán thành công
             items.delete()
 
         messages.success(request, 'Thanh toán đơn hàng thành công!')
@@ -229,10 +282,50 @@ def checkout(request):
 
     return render(request, 'customer/checkout.html', {'cart': cart, 'total': cart.get_total_price()})
 
-@login_required(login_url='login')
+@login_required
 def order_history(request):
     orders = Order.objects.filter(user=request.user).prefetch_related('items__book').order_by('-created_at')
     return render(request, 'customer/order_history.html', {'orders': orders})
+
+# ==========================================
+# 3. AUTH & PROFILE VIEWS
+# ==========================================
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect('dashboard')
+        else:
+            if not request.POST.get('username') or not request.POST.get('password'):
+                form.add_error(None, "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.")
+            else:
+                form.add_error(None, "Tên đăng nhập hoặc mật khẩu không chính xác.")
+    else:
+        form = AuthenticationForm()
+    return render(request, 'auth/login.html', {'form': form})
+
+def register_view(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Đăng ký thành công')
+            return redirect('dashboard')
+    else:
+        form = RegisterForm()
+    return render(request, 'auth/register.html', {'form': form})
+
+def logout_view(request):
+    logout(request)
+    messages.info(request, 'Đã đăng xuất')
+    return redirect('dashboard')
+
+@login_required
+def profile_view(request):
+    return render(request, 'auth/profile.html', {'user': request.user})
 
 @login_required
 def profile_edit(request):
@@ -276,14 +369,17 @@ def add_review(request, book_id):
         messages.error(request, 'Đánh giá không hợp lệ')
     return redirect('book_detail', book_id=book.id)
 
-@login_required
-def admin_reports(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
+# ==========================================
+# 4. ADMIN MANAGEMENT VIEWS
+# ==========================================
 
+@staff_member_required
+def admin_reports(request):
     pending_borrows = Borrow.objects.filter(status='pending').select_related('book', 'user')
-    
-    due_soon = Borrow.objects.filter(return_date__isnull=True, due_date__lte=timezone.now().date() + timedelta(days=5)).select_related('book', 'user')
+    due_soon = Borrow.objects.filter(
+        return_date__isnull=True, 
+        due_date__lte=timezone.now().date() + timedelta(days=5)
+    ).select_related('book', 'user')
     total_orders = Order.objects.count()
     recent_orders = Order.objects.order_by('-created_at')[:5].prefetch_related('items__book')
 
@@ -294,33 +390,32 @@ def admin_reports(request):
         'recent_orders': recent_orders,
     })
 
-def home(request):
-    return HttpResponse("Chatbot đã sẵn sàng!")
-
-
-@login_required
+@staff_member_required
 def admin_user_list(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
     users = User.objects.all()
     return render(request, 'admin/admin_user_list.html', {'users': users})
 
+@staff_member_required
+def add_new_user(request):
+    if request.method == 'POST':
+        form = AdminAddUserForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.is_staff = form.cleaned_data['is_staff']
+            user.save()
+            return redirect('admin_user_list')
+    else:
+        form = AdminAddUserForm()
+    return render(request, 'admin/add_user.html', {'form': form})
 
-@login_required
+@staff_member_required
 def admin_user_edit(request, user_id):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
-        
     user = get_object_or_404(User, id=user_id)
-    
     if request.method == 'POST':
         form = UserEditForm(request.POST, instance=user)
-        # Khởi tạo SetPasswordForm với dữ liệu POST
         pwd_form = SetPasswordForm(user, request.POST)
         
-        # Kiểm tra: nếu form chính hợp lệ VÀ (mật khẩu trống HOẶC mật khẩu hợp lệ)
         if form.is_valid():
-            # Kiểm tra xem có dữ liệu mật khẩu được gửi lên không
             if request.POST.get('new_password1') or request.POST.get('new_password2'):
                 if pwd_form.is_valid():
                     pwd_form.save()
@@ -336,15 +431,23 @@ def admin_user_edit(request, user_id):
         pwd_form = SetPasswordForm(user)
         
     return render(request, 'admin/user_form.html', {
-        'form': form, 
-        'pwd_form': pwd_form, 
-        'user': user
+        'form': form, 'pwd_form': pwd_form, 'user': user
     })
 
-@login_required
+@staff_member_required
+def admin_change_user_password(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        form = SetPasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('admin_user_edit', user_id=user.id)
+    else:
+        form = SetPasswordForm(user)
+    return render(request, 'admin/change_password.html', {'form': form, 'target_user': user})
+
+@staff_member_required
 def admin_user_delete(request, user_id):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
     user = get_object_or_404(User, id=user_id)
     if request.user.id == user.id:
         messages.error(request, 'Không thể xóa tài khoản của chính mình')
@@ -355,19 +458,13 @@ def admin_user_delete(request, user_id):
         return redirect('admin_user_list')
     return render(request, 'admin/user_confirm_delete.html', {'user': user})
 
-
-@login_required
+@staff_member_required
 def admin_book_list(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
-    books = Book.objects.all()
-    return render(request, 'admin/admin_book_list.html', {'books': books})
+    books_qs = Book.objects.all()
+    return render(request, 'admin/admin_book_list.html', {'books': books_qs})
 
-
-@login_required
+@staff_member_required
 def admin_book_add(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
     if request.method == 'POST':
         form = BookForm(request.POST, request.FILES)
         if form.is_valid():
@@ -378,11 +475,8 @@ def admin_book_add(request):
         form = BookForm()
     return render(request, 'admin/book_form.html', {'form': form, 'action': 'Thêm sách'})
 
-
-@login_required
+@staff_member_required
 def admin_book_edit(request, book_id):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
     book = get_object_or_404(Book, id=book_id)
     if request.method == 'POST':
         form = BookForm(request.POST, request.FILES, instance=book)
@@ -394,11 +488,8 @@ def admin_book_edit(request, book_id):
         form = BookForm(instance=book)
     return render(request, 'admin/book_form.html', {'form': form, 'action': 'Chỉnh sửa sách'})
 
-
-@login_required
+@staff_member_required
 def admin_book_delete(request, book_id):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
     book = get_object_or_404(Book, id=book_id)
     if request.method == 'POST':
         book.delete()
@@ -406,19 +497,13 @@ def admin_book_delete(request, book_id):
         return redirect('admin_book_list')
     return render(request, 'admin/book_confirm_delete.html', {'book': book})
 
-@login_required
+@staff_member_required
 def admin_borrow_requests(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
-    
     pending_borrows = Borrow.objects.filter(status='pending').select_related('book', 'user')
     return render(request, 'admin/borrow_requests.html', {'borrows': pending_borrows})
 
-@login_required
+@staff_member_required
 def admin_approve_borrow(request, borrow_id):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
-    
     borrow = get_object_or_404(Borrow, id=borrow_id)
     book = borrow.book
     
@@ -434,328 +519,187 @@ def admin_approve_borrow(request, borrow_id):
         
     return redirect('admin_borrow_requests')
 
-@login_required
+@staff_member_required
 def admin_reject_borrow(request, borrow_id):
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
-    
     borrow = get_object_or_404(Borrow, id=borrow_id)
     borrow.status = 'rejected'
     borrow.save()
     messages.info(request, 'Đã từ chối yêu cầu mượn.')
     return redirect('admin_borrow_requests')
 
+@staff_member_required
+def admin_category_add(request):
+    """View cho phép Admin tạo thể loại sách mới"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip().lower()
 
-@login_required
-def cart_view(request):
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    return render(request, 'customer/cart.html', {'cart': cart})
-
-
-@login_required
-def add_to_cart(request, book_id):
-    if request.method != 'POST':
-        return HttpResponseForbidden()
-    
-    book = get_object_or_404(Book, id=book_id)
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    
-    cart_item, item_created = CartItem.objects.get_or_create(cart=cart, book=book)
-    if not item_created:
-        cart_item.quantity += 1
-        cart_item.save()
-    
-    messages.success(request, f'Đã thêm "{book.title}" vào giỏ hàng')
-    return redirect('cart')
-
-
-@login_required
-def remove_from_cart(request, item_id):
-    if request.method != 'POST':
-        return HttpResponseForbidden()
-    
-    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
-    cart_item.delete()
-    messages.success(request, 'Đã xóa khỏi giỏ hàng')
-    return redirect('cart')
-
-
-@login_required
-def update_cart_item(request, item_id):
-    if request.method != 'POST':
-        return HttpResponseForbidden()
-    
-    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
-    quantity = request.POST.get('quantity', 1)
-    
-    try:
-        quantity = int(quantity)
-        if quantity > 0:
-            cart_item.quantity = quantity
-            cart_item.save()
-            messages.success(request, 'Cập nhật giỏ hàng')
+        if name and code:
+            # Sửa chữ 'c' thường thành chữ 'C' hoa ở Category:
+            category, created = Category.objects.get_or_create(
+                code=code, 
+                defaults={'name': name}
+            )
+            if created:
+                messages.success(request, f'Đã thêm thể loại mới: "{name}"')
+                return redirect('admin_book_list')
+            else:
+                messages.error(request, f'Mã thể loại "{code}" đã tồn tại!')
         else:
-            cart_item.delete()
-            messages.success(request, 'Đã xóa khỏi giỏ hàng')
-    except ValueError:
-        messages.error(request, 'Số lượng không hợp lệ')
-    
-    return redirect('cart')
+            messages.error(request, 'Vui lòng điền đầy đủ tên và mã thể loại.')
+
+    return render(request, 'admin/category_form.html')
 
 
-@login_required
-def profile_view(request):
-    return render(request, 'auth/profile.html', {'user': request.user})
+# ==========================================
+# 5. AI CHATBOT & VISION VIEWS
+# ==========================================
+import re
 
+import unicodedata
 
-def register_view(request):
-    if request.method == 'POST':
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Đăng ký thành công')
-            return redirect('dashboard')
-    else:
-        form = RegisterForm()
-
-    return render(request, 'auth/register.html', {'form': form})
-
-from django.contrib.auth import authenticate, login
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import AuthenticationForm
-
-from django import forms
-from django.contrib.auth.forms import AuthenticationForm
-
-def login_view(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            return redirect('dashboard')
-        else:
-            if not request.POST.get('username') or not request.POST.get('password'):
-                form.add_error(None, "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.")
-            else:
-                form.add_error(None, "Tên đăng nhập hoặc mật khẩu không chính xác.")
-    else:
-        form = AuthenticationForm()
-    return render(request, 'auth/login.html', {'form': form})
-
-
-def logout_view(request):
-    logout(request)
-    messages.info(request, 'Đã đăng xuất')
-    return redirect('dashboard')
-
-
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
-        Cart.objects.create(user=instance)
-@staff_member_required
-def admin_user_list(request):
-    users = User.objects.all()
-    # TRUYỀN 'users' (số nhiều) ĐỂ KHÔNG ĐÈ BIẾN 'user' CỦA DÙNG CHUNG
-    return render(request, 'admin/admin_user_list.html', {'users': users})
-    
-@staff_member_required
-def add_new_user(request):
-    if request.method == 'POST':
-        form = AdminAddUserForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.is_staff = form.cleaned_data['is_staff']
-            user.save()
-            return redirect('admin_user_list')
-    else:
-        form = AdminAddUserForm()
-    return render(request, 'admin/add_user.html', {'form': form})
-
-@staff_member_required
-def admin_change_user_password(request, user_id):
-    user = get_object_or_404(User, id=user_id)
-    if request.method == 'POST':
-        form = SetPasswordForm(user, request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('admin_user_edit', user_id=user.id)
-    else:
-        form = SetPasswordForm(user)
-    return render(request, 'admin/change_password.html', {'form': form, 'target_user': user})
-
-
-    
-
-from django.http import JsonResponse
-import json
-from ai_brain import get_chatbot_response, extract_search_query, is_query_too_short, find_book_by_query, extract_author_query, find_books_by_author, extract_category_query, find_books_by_category
-from .models import Book 
-
-def api_chat_bot(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        user_message = data.get("message", "").strip()
-        
-        intent, reply = get_chatbot_response(user_message)
-        
-        if intent == "tim_sach":
-
-            query = extract_search_query(user_message)
-
-            if is_query_too_short(query):
-                reply = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách cụ thể hơn nhé (ít nhất 2 ký tự)."
-            else:
-                sach = find_book_by_query(query, Book.objects.all())
-
-                if sach:
-                    link = f"/books/{sach.id}/" 
-                    
-                    reply = (
-                        f"Mình tìm thấy cuốn <b>{sach.title}</b> rồi!<br>"
-                        f"Tác giả: {sach.author}<br>"
-                        f"Còn lại: {sach.available} cuốn.<br>"
-                        f"<a href='{link}' style='color:blue; font-weight:bold;'>Nhấn vào đây để xem chi tiết & mượn sách</a>"
-                    )
-                else:
-                    reply = f"Mình tìm không thấy cuốn nào tên là '{query}' trong thư viện cả."
-
-        elif intent == "tim_theo_tac_gia":
-
-            author_query = extract_author_query(user_message)
-
-            if is_query_too_short(author_query):
-                reply = "Bạn muốn tìm sách của tác giả nào? Hãy gõ tên tác giả cụ thể hơn nhé (ít nhất 2 ký tự)."
-            else:
-                sach_list = find_books_by_author(author_query, Book.objects.all())
-
-                if sach_list:
-                    items = "".join(
-                        f"<br>- <b>{b.title}</b> (còn {b.available} cuốn) — "
-                        f"<a href='/books/{b.id}/' style='color:blue; font-weight:bold;'>Xem chi tiết</a>"
-                        for b in sach_list
-                    )
-                    reply = f"Mình tìm thấy {len(sach_list)} cuốn của tác giả '{author_query}':{items}"
-                else:
-                    reply = f"Mình tìm không thấy tác giả nào tên là '{author_query}' trong thư viện cả."
-
-        elif intent == "tim_theo_the_loai":
-
-            category_query = extract_category_query(user_message)
-
-            if is_query_too_short(category_query):
-                reply = "Bạn muốn tìm thể loại nào? Hãy gõ tên thể loại cụ thể hơn nhé (ít nhất 2 ký tự)."
-            else:
-                sach_list = find_books_by_category(category_query, Book.objects.all())
-
-                if sach_list:
-                    items = "".join(
-                        f"<br>- <b>{b.title}</b> ({b.author}, còn {b.available} cuốn) — "
-                        f"<a href='/books/{b.id}/' style='color:blue; font-weight:bold;'>Xem chi tiết</a>"
-                        for b in sach_list
-                    )
-                    reply = f"Mình tìm thấy {len(sach_list)} cuốn thuộc thể loại '{category_query}':{items}"
-                else:
-                    reply = f"Mình tìm không thấy sách nào thuộc thể loại '{category_query}' trong thư viện cả."
-
-        return JsonResponse({"reply": reply, "intent": intent})
-    
-
-
-# chatbot/views.py
-from django.http import JsonResponse
-import os
-from django.views.decorators.csrf import csrf_exempt
-from .models import Book 
-from vision_brain import predict_book_category
-from ai_brain import (
-    get_chatbot_response, extract_search_query, is_query_too_short, 
-    find_book_by_query, extract_author_query, find_books_by_author, 
-    extract_category_query, find_books_by_category
-)
+def remove_accents(input_str):
+    """Hàm chuyển chuỗi tiếng Việt có dấu thành không dấu (VD: 'Chí Phèo' -> 'chi pheo')"""
+    if not input_str:
+        return ""
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    no_accent = "".join([c for c in nfkd_form if not unicodedata.combining(c)])
+    return no_accent.replace('đ', 'd').replace('Đ', 'D').lower()
 
 @csrf_exempt
 def chat_view(request):
+    """View chính xử lý cả tin nhắn Text và Ảnh gửi tới Chatbot"""
     if request.method == 'POST':
-        # Mặc định intent là None cho các tác vụ không dùng NLP (như gửi ảnh)
-        current_intent = "nhan_dien_anh" 
+        current_intent = "nhan_dien_anh"
 
-        # --- 1. XỬ LÝ ẢNH ---
+        # --- A. XỬ LÝ ẢNH BÌA SÁCH ---
         if request.FILES.get('image'):
             image = request.FILES['image']
             upload_dir = os.path.join('media', 'temp')
-            if not os.path.exists(upload_dir):
-                os.makedirs(upload_dir)
+            os.makedirs(upload_dir, exist_ok=True)
             temp_path = os.path.join(upload_dir, image.name)
             
-            with open(temp_path, 'wb+') as f:
-                for chunk in image.chunks(): 
-                    f.write(chunk)
-            
-            sach_goi_y = None
-            
-            # 1. Đọc chữ trên ảnh bìa để tìm sách khớp tên
             try:
-                from vision_brain import extract_text_from_image
+                # Lưu file tạm
+                with open(temp_path, 'wb+') as f:
+                    for chunk in image.chunks(): 
+                        f.write(chunk)
+                
+                sach_goi_y = None
+                
+                ## 1. Đọc OCR chữ trên ảnh bìa
                 detected_text = extract_text_from_image(temp_path)
+                print(f"🔍 [DEBUG OCR] Chuỗi gốc: '{detected_text}'")
+
                 if detected_text:
+                    # Chuẩn hóa chuỗi OCR: Bỏ dấu tiếng Việt + Viết thường
+                    ocr_clean = remove_accents(detected_text)
+                    
+                    # Trích xuất các số nguyên vẹn đứng độc lập (Loại bỏ số dính chữ như '8Mg')
+                    ocr_numbers = set(re.findall(r'\b\d+\b', ocr_clean))
+
+                    best_match = None
+                    highest_score = 0
+
                     for book in Book.objects.all():
-                        if book.title.lower() in detected_text:
-                            sach_goi_y = book
-                            break
-            except Exception:
-                pass
-            
-            # 2. Nếu không đọc được chữ khớp tên sách, tìm theo tên file tải lên
-            if not sach_goi_y:
-                image_name = os.path.splitext(image.name)[0].lower()
-                if len(image_name) > 2 and image_name not in ['image', 'images', 'download', 'untitle', 'untitled']:
-                    sach_goi_y = Book.objects.filter(title__icontains=image_name).first()
-            
-            # Trả về kết quả cho xử lý ẢNH
-            if sach_goi_y:
-                link = f"/books/{sach_goi_y.id}/"
-                response = (
-                    f"Mình nhận diện được sách: <b>{sach_goi_y.title}</b><br>"
-                    f"Tác giả: {sach_goi_y.author}<br>"
-                    f"<a href='{link}' style='color:blue; font-weight:bold;'>Nhấn vào đây để xem chi tiết & mượn sách</a>"
-                )
-            else:
-                response = "Không tìm thấy truyện/sách nào tương ứng với ảnh bạn gửi trong thư viện."
+                        # Chuẩn hóa tên sách trong DB: Bỏ dấu tiếng Việt
+                        title_clean = remove_accents(book.title)
+                        book_numbers = set(re.findall(r'\b\d+\b', title_clean))
 
-            # Dọn dẹp file tạm
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except PermissionError:
-                    pass
+                        # 🛑 RÀNG BUỘC SỐ NGHIÊM NGẶT (Dành cho sách giáo khoa/theo tập):
+                        if book_numbers and not book_numbers.issubset(ocr_numbers):
+                            continue
 
-            # Trả về cả reply và intent
+                        # So sánh độ tương đồng chuỗi sau khi đã bỏ dấu
+                        score_set = fuzz.token_set_ratio(title_clean, ocr_clean)
+                        score_partial = fuzz.partial_ratio(title_clean, ocr_clean)
+                        score = max(score_set, score_partial)
+
+                        # Ngưỡng khớp tối thiểu 75%
+                        if score > highest_score and score >= 75:
+                            highest_score = score
+                            best_match = book
+
+                    if best_match:
+                        sach_goi_y = best_match
+                        print(f"🎯 Khớp thành công: '{best_match.title}' với độ tin cậy {highest_score}%")
+
+                # 2. Tìm theo tên file tải lên (nếu OCR không thấy)
+                if not sach_goi_y:
+                    image_name = os.path.splitext(image.name)[0].lower()
+                    if len(image_name) > 2 and image_name not in ['image', 'images', 'download', 'untitle', 'untitled']:
+                        sach_goi_y = Book.objects.filter(title__icontains=image_name).first()
+                
+                # Trả về kết quả
+                if sach_goi_y:
+                    link = f"/books/{sach_goi_y.id}/"
+                    response = (
+                        f"Mình nhận diện được sách: <b>{sach_goi_y.title}</b><br>"
+                        f"Tác giả: {sach_goi_y.author}<br>"
+                        f"<a href='{link}' style='color:blue; font-weight:bold;'>Nhấn vào đây để xem chi tiết & mượn sách</a>"
+                    )
+                else:
+                    # 3. Tận dụng CNN dự đoán thể loại & GỢI Ý SÁCH CÙNG THỂ LOẠI TƯƠNG TỰ
+                    predicted_cat = predict_book_category(temp_path)
+                    if predicted_cat:
+                        # Lấy thông tin thể loại từ database Category mới
+                        cat_obj = Category.objects.filter(code__iexact=predicted_cat).first()
+                        cat_display = cat_obj.name if cat_obj else predicted_cat.upper()
+
+                        # Query lấy tối đa 3 cuốn sách thuộc thể loại đó (Dùng category__code)
+                        similar_books = Book.objects.filter(category__code__iexact=predicted_cat)[:3]
+
+                        if similar_books.exists():
+                            items_html = "".join(
+                                f"<li><b>{b.title}</b> ({b.author}) — "
+                                f"<a href='/books/{b.id}/' style='color:blue; font-weight:bold;'>Xem chi tiết</a></li>"
+                                for b in similar_books
+                            )
+                            response = (
+                                f"Không tìm thấy chính xác cuốn sách này trong kho, nhưng mình đoán ảnh thuộc thể loại <b>{cat_display}</b>.<br><br>"
+                                f"<b>💡 Gợi ý một số sách cùng thể loại hiện có sẵn:</b>"
+                                f"<ul style='margin-top: 5px; padding-left: 20px;'>{items_html}</ul>"
+                            )
+                        else:
+                            response = f"Không tìm thấy chính xác cuốn sách này, nhưng mình đoán ảnh thuộc thể loại <b>{cat_display}</b> (hiện chưa có sách nào thuộc thể loại này trong kho)."
+                    else:
+                        response = "Không tìm thấy truyện/sách nào tương ứng với ảnh bạn gửi trong thư viện."
+
+            finally:
+                # Dọn dẹp file tạm an toàn
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except Exception:
+                        pass
+
             return JsonResponse({'reply': response, 'intent': current_intent})
 
-        # --- 2. XỬ LÝ TEXT (Tin nhắn chữ) ---
+        # --- B. XỬ LÝ TIN NHẮN CHỮ (TEXT CHAT) ---
         else:
             msg = request.POST.get('message', '').strip()
-            # AI phân loại ý định
+            if not msg:
+                # Trường hợp nhận dữ liệu JSON
+                try:
+                    data = json.loads(request.body)
+                    msg = data.get('message', '').strip()
+                except Exception:
+                    pass
+
             intent, response = get_chatbot_response(msg)
             
             if intent == "tim_sach":
                 query = extract_search_query(msg)
-
                 if is_query_too_short(query):
                     response = "Bạn muốn tìm cuốn nào? Hãy gõ tên sách cụ thể hơn nhé (ít nhất 2 ký tự)."
                 else:
-                    sach_tim_thay = find_book_by_query(query, Book.objects.all())
-
-                    if sach_tim_thay:
-                        link = f"/books/{sach_tim_thay.id}/"
+                    sach = find_book_by_query(query, Book.objects.all())
+                    if sach:
+                        link = f"/books/{sach.id}/"
                         response = (
-                            f"Mình tìm thấy cuốn <b>{sach_tim_thay.title}</b> rồi!<br>"
-                            f"Tác giả: {sach_tim_thay.author}<br>"
-                            f"Còn lại: {sach_tim_thay.available} cuốn.<br>"
+                            f"Mình tìm thấy cuốn <b>{sach.title}</b> rồi!<br>"
+                            f"Tác giả: {sach.author}<br>"
+                            f"Còn lại: {sach.available} cuốn.<br>"
                             f"<a href='{link}' style='color:blue; font-weight:bold;'>Nhấn vào đây để xem chi tiết & mượn sách</a>"
                         )
                     else:
@@ -763,12 +707,10 @@ def chat_view(request):
 
             elif intent == "tim_theo_tac_gia":
                 author_query = extract_author_query(msg)
-
                 if is_query_too_short(author_query):
                     response = "Bạn muốn tìm sách của tác giả nào? Hãy gõ tên tác giả cụ thể hơn nhé (ít nhất 2 ký tự)."
                 else:
                     sach_list = find_books_by_author(author_query, Book.objects.all())
-
                     if sach_list:
                         items = "".join(
                             f"<br>- <b>{b.title}</b> (còn {b.available} cuốn) — "
@@ -781,12 +723,10 @@ def chat_view(request):
 
             elif intent == "tim_theo_the_loai":
                 category_query = extract_category_query(msg)
-
                 if is_query_too_short(category_query):
                     response = "Bạn muốn tìm thể loại nào? Hãy gõ tên thể loại cụ thể hơn nhé (ít nhất 2 ký tự)."
                 else:
                     sach_list = find_books_by_category(category_query, Book.objects.all())
-
                     if sach_list:
                         items = "".join(
                             f"<br>- <b>{b.title}</b> ({b.author}, còn {b.available} cuốn) — "
@@ -797,7 +737,16 @@ def chat_view(request):
                     else:
                         response = f"Mình tìm không thấy sách nào thuộc thể loại '{category_query}' trong thư viện cả."
 
-            # Trả về Json có KÈM THEO 'intent' giống như của bạn cậu
             return JsonResponse({'reply': response, 'intent': intent})
     
     return JsonResponse({'reply': 'Method không được hỗ trợ'}, status=405)
+
+# Signal tự động tạo Profile và Giỏ hàng khi User mới đăng ký
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+        Cart.objects.create(user=instance)
+
+# Gán alias để urls.py gọi tên cũ api_chat_bot vẫn hoạt động bình thường
+api_chat_bot = chat_view

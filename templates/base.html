@@ -608,36 +608,105 @@ document.addEventListener("DOMContentLoaded", function() {
     const chatInput = document.getElementById('chat-input');
     const imageInput = document.getElementById('image-upload');
 
-    // 1. Khôi phục lịch sử chat
-    renderChatHistory();
+    let selectedImageFile = null;
 
-    // 2. CẬP NHẬT: Kiểm tra và tự động mở lại Chatbot nếu trước đó người dùng đang mở
+    // 1. Tạo khung xem trước ảnh (Preview) ngay trên ô nhập liệu
+    let chatInputArea = chatInput.closest('.chat-input-area') || chatInput.parentElement.parentElement;
+    let previewContainer = document.getElementById('image-preview-container');
+    
+    if (!previewContainer) {
+        previewContainer = document.createElement('div');
+        previewContainer.id = 'image-preview-container';
+        previewContainer.style.cssText = 'display: none; padding: 6px 12px; align-items: center; gap: 10px; background: #f8f9fa; border-top: 1px solid #eee; border-radius: 8px 8px 0 0; margin-bottom: 5px;';
+        previewContainer.innerHTML = `
+            <img id="preview-thumb" src="" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc;" />
+            <span id="preview-name" style="font-size: 13px; color: #333; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+            <button type="button" id="remove-img-btn" style="background: none; border: none; color: #ff4d4f; cursor: pointer; font-size: 16px; font-weight: bold;" title="Hủy ảnh">✕</button>
+        `;
+        chatInputArea.parentNode.insertBefore(previewContainer, chatInputArea);
+    }
+
+    const previewThumb = document.getElementById('preview-thumb');
+    const previewName = document.getElementById('preview-name');
+    const removeImgBtn = document.getElementById('remove-img-btn');
+
+    // 2. Patch lại hàm renderChatHistory để hỗ trợ hiển thị ảnh đúng cách
+    if (typeof window.renderChatHistory === 'function') {
+        let originalRender = window.renderChatHistory;
+        window.renderChatHistory = function() {
+            originalRender();
+            // Tự động quét và chuyển đổi chuỗi base64 thành thẻ img trong khung chat
+            let messages = chatBox.querySelectorAll('.message, .chat-message, p, div');
+            messages.forEach(el => {
+                if (el.textContent && el.textContent.trim().startsWith('data:image/')) {
+                    el.innerHTML = `<img src="${el.textContent.trim()}" style="max-width: 160px; border-radius: 8px; display: block; margin-top: 4px;">`;
+                }
+            });
+        };
+    }
+
+    // Khởi chạy lịch sử chat ban đầu
+    if (typeof renderChatHistory === 'function') {
+        renderChatHistory();
+    }
+
     const isChatOpen = localStorage.getItem(CHAT_STATE_KEY) === 'true';
     if (isChatOpen) {
         document.getElementById('chat-popup').style.display = 'flex';
     }
 
-    // 3. Tắt Menu Profile khi click ra ngoài
-    document.addEventListener('click', function(e) {
-        const menu = document.getElementById('profileMenu');
-        const isProfileButton = e.target.closest('button[onclick*="toggleProfileMenu"]');
-        if (menu && !isProfileButton && !menu.contains(e.target)) {
-            menu.style.display = 'none';
+    // 3. Xử lý khi chọn ảnh
+    imageInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            selectedImageFile = this.files[0];
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                previewThumb.src = e.target.result;
+                previewName.textContent = selectedImageFile.name;
+                previewContainer.style.display = 'flex';
+            }
+            reader.readAsDataURL(selectedImageFile);
         }
     });
 
-    // 4. Xử lý Gửi tin nhắn Text
+    // 4. Nút hủy bỏ ảnh
+    removeImgBtn.addEventListener('click', function() {
+        selectedImageFile = null;
+        imageInput.value = '';
+        previewContainer.style.display = 'none';
+    });
+
+    // 5. Xử lý Gửi tin nhắn
     window.sendMessage = function() {
         let msg = chatInput.value.trim();
-        if (msg === "") return;
-
-        saveMessage('user', msg);
-        renderChatHistory();
-        chatInput.value = "";
+        if (msg === "" && !selectedImageFile) return;
 
         let formData = new FormData();
-        formData.append('message', msg);
+        if (msg !== "") {
+            formData.append('message', msg);
+            saveMessage('user', msg);
+        }
 
+        if (selectedImageFile) {
+            formData.append('image', selectedImageFile);
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                // Lưu chuỗi base64 trực tiếp vào history
+                saveMessage('user', e.target.result);
+                if (typeof renderChatHistory === 'function') renderChatHistory();
+            }
+            reader.readAsDataURL(selectedImageFile);
+        }
+
+        // Reset form
+        chatInput.value = "";
+        selectedImageFile = null;
+        imageInput.value = "";
+        previewContainer.style.display = 'none';
+
+        if (typeof renderChatHistory === 'function') renderChatHistory();
+
+        // Gửi lên server Django
         fetch('/chat/', {
             method: 'POST',
             body: formData,
@@ -646,41 +715,10 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(r => r.json())
         .then(data => {
             saveMessage('bot', data.reply);
-            renderChatHistory();
+            if (typeof renderChatHistory === 'function') renderChatHistory();
         })
         .catch(err => console.error("Lỗi gửi tin nhắn:", err));
     };
-
-    // 5. Xử lý Gửi ảnh
-    imageInput.addEventListener('change', function() {
-        if (!this.files[0]) return;
-
-        let file = this.files[0];
-        let formData = new FormData();
-        formData.append('image', file);
-
-        let reader = new FileReader();
-        reader.onload = (e) => {
-            saveMessage('user', e.target.result, true);
-            renderChatHistory();
-
-            fetch('/chat/', {
-                method: 'POST',
-                body: formData,
-                headers: {'X-CSRFToken': getCookie('csrftoken')}
-            })
-            .then(r => r.json())
-            .then(data => {
-                saveMessage('bot', data.reply);
-                renderChatHistory();
-            })
-            .catch(err => console.error("Lỗi gửi ảnh:", err))
-            .finally(() => {
-                imageInput.value = "";
-            });
-        };
-        reader.readAsDataURL(file);
-    });
 });
 </script>
 </body>

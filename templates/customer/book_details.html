@@ -242,8 +242,10 @@
             <h1 class="book-title">{{ book.title }}</h1>
             <p class="book-meta">Tác giả: <strong>{{ book.author }}</strong> · Năm: {{ book.published_year }}</p>
 
-            <div class="badge-group">
-                <span class="badge badge-category">{{ book.get_category_display }}</span>
+           <div class="badge-group">
+                {% if book.category %}
+                    <span class="badge badge-category">{{ book.category.name }}</span>
+                {% endif %}
                 {% if book.available > 0 %}
                     <span class="badge badge-success">Còn {{ book.available }} cuốn</span>
                 {% else %}

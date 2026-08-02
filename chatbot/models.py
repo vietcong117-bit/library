@@ -2,6 +2,16 @@ from django.db import models
 from django.contrib.auth.models import User
 
 # Create your models here.
+
+# 1. Bổ sung class Category mới vào đây
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Book(models.Model):
 
     CATEGORY_CHOICES = [
@@ -19,10 +29,13 @@ class Book(models.Model):
 
     published_year = models.IntegerField()
 
-    category = models.CharField(
-        max_length=20,
-        choices=CATEGORY_CHOICES,
-        default='tech'
+    # 2. Sửa trường category từ CharField thành ForeignKey trỏ tới Category
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='books'
     )
 
     quantity = models.IntegerField(default=0)
@@ -37,6 +50,7 @@ class Book(models.Model):
     def __str__(self):
         return self.title
 
+
 class Borrow(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Đang chờ duyệt'),
@@ -46,7 +60,6 @@ class Borrow(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     
-    # THÊM auto_now_add=True VÀO ĐÂY
     borrow_date = models.DateField(auto_now_add=True)
 
     due_date = models.DateField()
@@ -55,6 +68,7 @@ class Borrow(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.book.title}"
+
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

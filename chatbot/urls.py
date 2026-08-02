@@ -43,6 +43,7 @@ urlpatterns = [
     path('staff/borrows/', views.admin_borrow_requests, name='admin_borrow_requests'),
     path('staff/borrows/<int:borrow_id>/approve/', views.admin_approve_borrow, name='admin_approve_borrow'),
     path('staff/borrows/<int:borrow_id>/reject/', views.admin_reject_borrow, name='admin_reject_borrow'),
+    path('staff/categories/add', views.admin_category_add, name='admin_category_add'),
 
     path("books/", views.books, name="books"),
     path("books/<int:book_id>/", views.book_details, name="book_detail"),
@@ -64,3 +65,4 @@ path('chat/', views.chat_view, name='chat'),
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.BASE_DIR / 'static')
+    urlpatterns += static('/', document_root=settings.BASE_DIR)

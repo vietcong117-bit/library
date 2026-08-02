@@ -42,10 +42,12 @@
     <div>
         <select name="category">
             <option value="">-- Tất cả thể loại --</option>
-            <option value="tech" {% if category == 'tech' %}selected{% endif %}>Công nghệ</option>
-            <option value="fiction" {% if category == 'fiction' %}selected{% endif %}>Văn học</option>
-            <option value="selfhelp" {% if category == 'selfhelp' %}selected{% endif %}>Tự phát triển</option>
-            <option value="business" {% if category == 'business' %}selected{% endif %}>Kinh doanh</option>
+            <!-- 👉 Dùng vòng lặp lấy toàn bộ thể loại từ database -->
+            {% for cat in categories %}
+                <option value="{{ cat.code }}" {% if category == cat.code %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+            {% endfor %}
         </select>
     </div>
 
@@ -73,16 +75,15 @@
 
 </form>
 
-
 <div class="books-grid">
 
     {% for book in books %}
     <div class="book-card">
 
         <a href="{% url 'book_detail' book.id %}" style="text-decoration: none; color: inherit; display: block;">
-            <img class="book-card-image"
-                 src="{% if book.image %}{{ book.image.url }}{% else %}https://via.placeholder.com/200x300{% endif %}" 
-                 alt="{{ book.title }}">
+            <img class="book-card-image" 
+                src="{% if book.image %}{{ book.image.url }}{% else %}https://via.placeholder.com/200x300{% endif %}" 
+                alt="{{ book.title }}">
             
             <div class="book-card-content">
                 <h3 class="book-card-title">{{ book.title }}</h3>

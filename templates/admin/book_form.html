@@ -10,12 +10,39 @@
     <div class="dashboard-card" style="padding: 32px;">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            
+            0
             {% for field in form %}
                 <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--text-main);">
-                        {{ field.label }}
-                    </label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-weight: 600; font-size: 14px; color: var(--text-main); margin-bottom: 0;">
+                            {{ field.label }}
+                        </label>
+                        
+                        {% comment %} Nếu trường hiện tại là category thì hiển thị thêm nút thêm mới bên cạnh {% endcomment %}
+                        {% if field.name == 'category' %}
+                            <a href="{% url 'admin_category_add' %}" style="font-size: 13px; color: #2563eb; text-decoration: none; font-weight: 500;">
+                                + Thêm thể loại mới
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    {% if field.name == 'image' %}
+                        <div style="margin-bottom: 8px;">
+                            <!-- 1. Hiển thị ảnh cũ nếu đang ở chế độ Sửa sách -->
+                            {% if form.instance.image %}
+                                <div style="margin-bottom: 6px;">
+                                    <span style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Ảnh hiện tại:</span>
+                                    <img src="{{ form.instance.image.url }}" alt="Ảnh bìa sách" style="max-width: 90px; height: 130px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; display: block;">
+                                </div>
+                            {% endif %}
+                            
+                            <!-- 2. Khung xem trước (Live Preview) khi người dùng chọn file mới -->
+                            <div id="upload-preview-container" style="display: none; margin-top: 6px;">
+                                <span style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Ảnh xem trước:</span>
+                                <img id="image-preview-tag" src="" alt="Xem trước" style="max-width: 90px; height: 130px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; display: block;">
+                            </div>
+                        </div>
+                    {% endif %}
                     
                     <div style="width: 100%;">
                         {{ field }}
@@ -40,4 +67,29 @@
         </form>
     </div>
 </div>
+
+<!-- 💡 Script hỗ trợ hiển thị ảnh ngay khi bấm chọn file (Live Preview) -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const fileInput = document.querySelector('input[type="file"]');
+    const previewContainer = document.getElementById('upload-preview-container');
+    const previewTag = document.getElementById('image-preview-tag');
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewTag.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

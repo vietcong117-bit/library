@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container" style="max-width: 600px; margin: 24px auto; padding: 0 20px;">
+    <div style="margin-bottom: 24px;">
+        <h2 class="section-title">Thêm thể loại sách mới</h2>
+    </div>
+
+    <div class="dashboard-card" style="padding: 32px;">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                    Tên thể loại (Tiếng Việt):
+                </label>
+                <input type="text" name="name" placeholder="Ví dụ: Truyện tranh, Lịch sử, Kỹ năng..." required 
+                       style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #ccc;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                    Mã thể loại (Dành cho hệ thống / AI CNN):
+                </label>
+                <input type="text" name="code" placeholder="Ví dụ: manga, history, skill..." required 
+                       style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #ccc;">
+                <small style="display: block; color: var(--text-muted, #666); margin-top: 6px; font-size: 12px;">
+                    Viết liền không dấu (VD: <code>comic</code>, <code>science</code>).
+                </small>
+            </div>
+
+            <div style="margin-top: 32px; display: flex; gap: 12px; align-items: center;">
+                <button type="submit" class="btn btn-primary">Thêm thể loại</button>
+                <a href="{% url 'admin_book_list' %}" class="btn btn-ghost" style="text-decoration: none;">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
