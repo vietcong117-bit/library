@@ -1,6 +1,7 @@
 # ai_brain.py
 import pickle
 import os
+import random
 from underthesea import word_tokenize
 from dataset import RESPONSES
 
@@ -8,12 +9,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "chatbot_model.pkl")
 VEC_PATH = os.path.join(BASE_DIR, "vectorizer.pkl")
 
-# Dưới ngưỡng này thì coi như model không đủ chắc chắn -> ép về "unknown".
-# LƯU Ý: mỗi khi thêm intent mới, xác suất tối đa của MỌI câu (kể cả câu
-# đúng) sẽ tự nhiên giảm xuống, vì xác suất bị chia cho nhiều lớp hơn.
-# Threshold cần được hạ tương ứng khi số lượng intent tăng lên, nếu không
-# các câu đúng cũng bị rớt oan vào "unknown" (đã xảy ra ở đây: 6 intent
-# ban đầu dùng ngưỡng 0.35 ổn, nhưng lên 9 intent thì cần hạ xuống ~0.3).
+
 CONFIDENCE_THRESHOLD = 0.3
 
 with open(MODEL_PATH, "rb") as f:
@@ -26,56 +22,36 @@ def get_chatbot_response(user_message):
     segmented_text = word_tokenize(user_message, format="text")
     user_tfidf = vectorizer.transform([segmented_text])
 
-    # BƯỚC QUAN TRỌNG: nếu câu người dùng gõ không chứa BẤT KỲ từ nào nằm
-    # trong từ vựng đã học (vector toàn số 0 - out-of-vocabulary), thì model
-    # không thực sự "hiểu" gì cả, nó chỉ đang thiên vị theo nhãn có nhiều mẫu
-    # train hơn. Trường hợp này phải ép "unknown" ngay, KHÔNG được tin vào
-    # predict_proba() vì con số đó lúc này không phản ánh nội dung câu.
+
     if user_tfidf.nnz == 0:
-        return "unknown", RESPONSES["unknown"]
+        return "unknown", random.choice(RESPONSES["unknown"])
 
     probabilities = model.predict_proba(user_tfidf)[0]
     max_prob = probabilities.max()
     predicted_intent = model.classes_[probabilities.argmax()]
 
-    # Fallback: câu hỏi mơ hồ, model không đủ tự tin -> "unknown"
     if max_prob < CONFIDENCE_THRESHOLD:
         predicted_intent = "unknown"
 
-    response = RESPONSES.get(predicted_intent, RESPONSES["unknown"])
+
+    response_options = RESPONSES.get(predicted_intent, RESPONSES["unknown"])
+    response = random.choice(response_options)
 
     return predicted_intent, response
 
 
-# ---------------------------------------------------------------------------
-# Bóc tách từ khóa tìm sách "thông minh" (dùng chung cho mọi view trong views.py)
-# ---------------------------------------------------------------------------
 
-# Các từ mang tính "hành động/hư từ" trong câu tìm sách, KHÔNG phải tên sách.
-# So với .replace() cũ, ở đây stopword được loại bỏ theo TỪNG TỪ (word-level),
-# nên sẽ không bao giờ "cắn" nhầm vào một ký tự nằm bên trong tên sách
-# (vd: chữ "a" trong "Clean Code" sẽ không bị đụng tới).
 STOPWORDS_SEARCH = {
     "tìm", "kiếm", "sách", "cuốn", "truyện", "quyển", "giúp", "mình",
     "muốn", "hỏi", "cho", "về", "có", "là", "tên", "đọc", "mượn",
     "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ"
 }
 
-MIN_QUERY_LENGTH = 2  # từ khóa dưới 2 ký tự thì coi là quá ngắn, không tìm
+MIN_QUERY_LENGTH = 2  
 
 
 def extract_search_query(user_message: str) -> str:
-    """
-    Tách tên sách / từ khóa tìm kiếm ra khỏi câu người dùng gõ.
-
-    underthesea đôi khi GỘP một stopword chung với từ kế bên thành một
-    token duy nhất (vd: "truyện chí phèo" -> "truyện_chí" + "phèo", thay vì
-    "truyện" + "chí_phèo"). Nếu chỉ lọc stopword ở cấp CẢ TOKEN, những
-    trường hợp gộp lẫn này sẽ lọt lưới. Nên ở đây, mỗi token được tách nhỏ
-    theo dấu "_", lọc stopword ở cấp TỪNG PHẦN, rồi mới ráp lại phần còn sót.
-
-    Trả về chuỗi rỗng nếu không còn từ khóa nào có nghĩa.
-    """
+    
     if not user_message:
         return ""
 
@@ -99,20 +75,7 @@ def is_query_too_short(query: str) -> bool:
 
 
 def find_book_by_query(query: str, book_queryset):
-    """
-    Tìm sách có tên CHỨA `query`, không phân biệt hoa/thường — xử lý ở
-    tầng Python bằng str.lower() thay vì dựa vào Book.objects.filter(
-    title__icontains=...).
-
-    LÝ DO: SQLite (LIKE/icontains) chỉ case-fold đúng cho ký tự ASCII
-    (a-z, A-Z). Với ký tự có dấu tiếng Việt như "Đ"/"đ", "Ư"/"ư"...,
-    SQLite coi hoa và thường là 2 ký tự KHÁC NHAU, nên "đắc nhân tâm"
-    sẽ không khớp được với "Đắc Nhân Tâm" dù về logic là cùng một chữ.
-    str.lower() của Python xử lý Unicode đúng chuẩn nên không bị lỗi này.
-
-    `book_queryset` là một QuerySet Book bất kỳ (vd: Book.objects.all()).
-    Trả về đối tượng Book đầu tiên khớp, hoặc None nếu không tìm thấy.
-    """
+   
     query_lower = query.lower()
     for book in book_queryset.only("id", "title", "author", "available"):
         if query_lower in book.title.lower():
@@ -120,26 +83,17 @@ def find_book_by_query(query: str, book_queryset):
     return None
 
 
-# ---------------------------------------------------------------------------
-# Tìm sách theo TÊN TÁC GIẢ
-# ---------------------------------------------------------------------------
 
-# Các từ mang tính hư từ trong câu hỏi theo tác giả, KHÔNG phải tên tác giả.
 STOPWORDS_AUTHOR = {
     "tìm", "sách", "cuốn", "truyện", "quyển", "tác", "phẩm", "tác_phẩm",
     "giả", "tác_giả", "của", "do", "viết", "bởi", "cho", "mình", "muốn",
     "xem", "hỏi", "có", "không", "là", "gì", "này", "những", "các",
-    "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ"
+    "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ","của"
 }
 
 
 def extract_author_query(user_message: str) -> str:
-    """
-    Tách tên tác giả ra khỏi câu người dùng gõ, dùng chung kỹ thuật với
-    extract_search_query(): tokenize rồi lọc stopword ở cấp TỪNG PHẦN
-    của token (tách theo dấu "_") để không bị lọt lưới khi underthesea
-    gộp một stopword dính liền với tên riêng thành một token.
-    """
+    
     if not user_message:
         return ""
 
@@ -158,11 +112,7 @@ def extract_author_query(user_message: str) -> str:
 
 
 def find_books_by_author(query: str, book_queryset):
-    """
-    Tìm TẤT CẢ sách có tên tác giả CHỨA `query`, không phân biệt hoa/thường
-    (cùng lý do Unicode như find_book_by_query ở trên). Một tác giả có thể
-    có nhiều tác phẩm, nên hàm này trả về LIST thay vì 1 object duy nhất.
-    """
+  
     query_lower = query.lower()
     return [
         book for book in book_queryset.only("id", "title", "author", "available")
@@ -170,9 +120,7 @@ def find_books_by_author(query: str, book_queryset):
     ]
 
 
-# ---------------------------------------------------------------------------
-# Tìm sách theo THỂ LOẠI
-# ---------------------------------------------------------------------------
+
 
 STOPWORDS_CATEGORY = {
     "tìm", "sách", "cuốn", "truyện", "quyển", "thể", "loại", "thể_loại",
@@ -183,11 +131,7 @@ STOPWORDS_CATEGORY = {
 
 
 def extract_category_query(user_message: str) -> str:
-    """
-    Tách tên thể loại ra khỏi câu người dùng gõ, dùng chung kỹ thuật với
-    extract_search_query() / extract_author_query(): tokenize rồi lọc
-    stopword ở cấp TỪNG PHẦN của token (tách theo dấu "_").
-    """
+    
     if not user_message:
         return ""
 
@@ -206,30 +150,27 @@ def extract_category_query(user_message: str) -> str:
 
 
 def find_books_by_category(query: str, book_queryset):
-    """
-    Tìm TẤT CẢ sách thuộc thể loại `query`, không phân biệt hoa/thường.
-
-    LƯU Ý QUAN TRỌNG: field `category` trong DB của bạn đang lưu bằng
-    MÃ TIẾNG ANH (vd: "tech", "fiction", "business"), trong khi người
-    dùng gõ tiếng Việt (vd: "công nghệ"). Hai chuỗi này sẽ KHÔNG BAO GIỜ
-    khớp icontains với nhau dù có xử lý Unicode đúng cách đến đâu.
-
-    Nên trước khi lọc, hàm này thử "dịch" từ khóa tiếng Việt sang đúng mã
-    category qua CATEGORY_ALIASES. Nếu không dịch được (không khớp alias
-    nào), sẽ fallback về so khớp trực tiếp — phòng trường hợp admin sau
-    này lưu category bằng tiếng Việt luôn thì vẫn hoạt động bình thường.
-    """
+    
     resolved_code = resolve_category_code(query)
     match_target = resolved_code if resolved_code else query.lower()
 
-    return [
-        book for book in book_queryset.only("id", "title", "author", "available", "category")
-        if book.category and match_target in book.category.lower()
-    ]
+    
+    try:
+        book_queryset = book_queryset.select_related("category")
+    except Exception:
+        pass  
+
+    result = []
+    for book in book_queryset:
+        if not book.category:
+            continue
+        category_str = str(book.category)  
+        if match_target in category_str.lower():
+            result.append(book)
+    return result
 
 
-# Ánh xạ: mã category thật trong DB -> các cách người dùng có thể gõ bằng
-# tiếng Việt. CẬP NHẬT danh sách này mỗi khi thêm category mới vào DB.
+
 CATEGORY_ALIASES = {
     "tech": ["công nghệ", "khoa học", "kỹ thuật", "cntt", "tin học", "lập trình", "công nghiệp"],
     "fiction": ["văn học", "tiểu thuyết", "truyện", "trinh thám", "ngôn tình", "văn chương"],
@@ -238,19 +179,13 @@ CATEGORY_ALIASES = {
 
 
 def resolve_category_code(query: str):
-    """
-    Cố gắng "dịch" từ khóa thể loại tiếng Việt sang đúng mã category
-    đang lưu trong DB (vd: "công nghệ" -> "tech"). Trả về None nếu
-    không khớp được alias nào.
-    """
+   
     query_lower = query.lower()
 
-    # Trường hợp người dùng gõ đúng luôn mã category (vd: "tech")
     if query_lower in CATEGORY_ALIASES:
         return query_lower
 
-    # So khớp theo danh sách alias tiếng Việt (so khớp 2 chiều để linh hoạt
-    # hơn: "công nghệ" khớp "công nghệ thông tin" và ngược lại)
+    
     for code, aliases in CATEGORY_ALIASES.items():
         for alias in aliases:
             if alias in query_lower or query_lower in alias:
