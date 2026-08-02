@@ -1,5 +1,3 @@
-
-
 INTENT_DATA = {
     "chao_hoi": [
         "ê bot",
@@ -1418,14 +1416,55 @@ INTENT_DATA = {
 }
 
 RESPONSES = {
-    "chao_hoi": "Xin chào! Trợ lý ảo Thư viện Đại học Phan Thiết có thể giúp gì cho bạn?",
-    "tam_biet": "Tạm biệt bạn nhé! Hẹn gặp lại bạn tại thư viện.",
-    "cam_on": "Không có chi đâu nè! Rất vui được hỗ trợ bạn.",
-    "tim_sach": "Bạn vui lòng nhập tên sách hoặc từ khóa nhé.",
-    "hoi_thu_tuc": "Để mượn sách, bạn chỉ cần mang Thẻ sinh viên đến quầy thủ thư để cán bộ hỗ trợ làm thủ tục mượn nha.",
-    "tim_theo_tac_gia": "Bạn vui lòng cho mình biết tên tác giả nhé.",
-    "huong_dan_tra_sach": "Bạn mang sách cùng Thẻ sinh viên đến quầy thủ thư để trả sách nha. Nhớ trả đúng hạn để tránh bị phạt nhé!",
-    "tim_theo_the_loai": "Bạn vui lòng cho mình biết thể loại sách bạn muốn tìm nhé.",
-    "hoi_phat_tre": "Sách trả quá hạn sẽ phạt 2.000đ/ngày. Trường hợp làm mất hoặc làm rách hỏng sách, bạn sẽ phải đền cuốn sách mới tương đương hoặc bồi thường theo giá trị của cuốn sách nha.",
-    "unknown": "Xin lỗi, thư viện chưa hiểu ý bạn lắm. Bạn có thể nói rõ hơn được không?",
+    "chao_hoi": [
+        "Xin chào! Trợ lý ảo Thư viện Đại học Phan Thiết có thể giúp gì cho bạn?",
+        "Chào bạn nha! Bạn cần mình hỗ trợ tìm sách hay hỏi thủ tục gì không?",
+        "Hi bạn! Thư viện đây, có gì mình giúp được không nè?",
+        "Chào bạn! Cứ gõ tên sách, tên tác giả hoặc thể loại là mình tìm liền nhé.",
+    ],
+    "tam_biet": [
+        "Tạm biệt bạn nhé! Hẹn gặp lại bạn tại thư viện.",
+        "Bye bạn! Cần gì cứ quay lại tìm mình nha.",
+        "Chào tạm biệt, chúc bạn đọc sách vui nhé!",
+    ],
+    "cam_on": [
+        "Không có chi đâu nè! Rất vui được hỗ trợ bạn.",
+        "Ok bạn ơi, có gì cứ hỏi mình tiếp nha!",
+        "Dạ không có gì, chúc bạn đọc sách vui vẻ nhé!",
+        "Hehe không có gì đâu, mình luôn sẵn sàng giúp bạn.",
+    ],
+    "tim_sach": [
+        "Bạn vui lòng nhập tên sách hoặc từ khóa nhé.",
+        "Bạn muốn tìm cuốn nào, gõ tên sách cho mình biết nha!",
+        "Cho mình xin tên sách để mình tìm giúp bạn nhé.",
+    ],
+    "hoi_thu_tuc": [
+        "Để mượn sách, bạn chỉ cần mang Thẻ sinh viên đến quầy thủ thư để cán bộ hỗ trợ làm thủ tục mượn nha.",
+        "Thủ tục mượn sách khá đơn giản: bạn mang Thẻ sinh viên ra quầy thủ thư là được hỗ trợ ngay nhé.",
+        "Bạn chỉ cần đem Thẻ sinh viên tới quầy thủ thư, các cô/chú sẽ hướng dẫn làm thủ tục mượn cho bạn nha.",
+    ],
+    "tim_theo_tac_gia": [
+        "Bạn vui lòng cho mình biết tên tác giả nhé.",
+        "Cho mình xin tên tác giả để mình tìm sách giúp bạn nha!",
+        "Bạn muốn tìm sách của tác giả nào, gõ tên cho mình biết nhé.",
+    ],
+    "huong_dan_tra_sach": [
+        "Bạn mang sách cùng Thẻ sinh viên đến quầy thủ thư để trả sách nha. Nhớ trả đúng hạn để tránh bị phạt nhé!",
+        "Trả sách thì bạn cứ đem sách và Thẻ sinh viên ra quầy thủ thư nha, nhớ trả đúng hạn kẻo bị phạt đó!",
+        "Bạn mang sách ra quầy thủ thư để trả là được rồi nè, nhớ đúng hạn nhé!",
+    ],
+    "tim_theo_the_loai": [
+        "Bạn vui lòng cho mình biết thể loại sách bạn muốn tìm nhé.",
+        "Cho mình xin tên thể loại để mình tìm sách giúp bạn nha!",
+        "Bạn thích thể loại nào, gõ cho mình biết để mình liệt kê sách nhé.",
+    ],
+    "hoi_phat_tre": [
+        "Sách trả quá hạn sẽ phạt 2.000đ/ngày. Trường hợp làm mất hoặc làm rách hỏng sách, bạn sẽ phải đền cuốn sách mới tương đương hoặc bồi thường theo giá trị của cuốn sách nha.",
+        "Trả trễ hạn thì phạt 2.000đ mỗi ngày bạn nha. Còn nếu làm mất hay rách sách thì phải đền sách mới hoặc bồi thường giá trị cuốn đó.",
+    ],
+    "unknown": [
+        "Xin lỗi, thư viện chưa hiểu ý bạn lắm . Bạn có thể nói rõ hơn được không?",
+        "Ơ, mình chưa hiểu ý bạn lắm. Bạn thử nói rõ hơn xem sao nhé!",
+        "Hmm, câu này mình chưa nắm được ý bạn. Bạn diễn đạt lại giúp mình với nha.",
+    ],
 }
