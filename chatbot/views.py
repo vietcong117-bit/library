@@ -23,6 +23,7 @@ from rapidfuzz import fuzz
 # Import Models & Forms
 from .models import Book, Favorite, Borrow, UserProfile, Cart, CartItem, Order, OrderItem, Review
 from .forms import RegisterForm, BookForm, UserEditForm, ProfileEditForm, ReviewForm, AdminAddUserForm
+from django.db.models import Q
 from .services import (
     get_filtered_books, get_book_details, search_books_by_title, 
     toggle_favorite, get_user_borrows, get_user_favorites
@@ -176,17 +177,34 @@ def book_favorite(request, book_id):
 
     return redirect(request.META.get('HTTP_REFERER', 'books'))
 
+from django.db.models import Q
+
 def book_search(request):
-    title = request.GET.get("title")
+    query = request.GET.get("q") or request.GET.get("title", "")
     category = request.GET.get("category")
     available = request.GET.get("available")
-
     available_bool = (available.lower() == "true") if available else None
     sort = request.GET.get("sort")
 
-    books_qs = search_books_by_title(title, category=category, available=available_bool, sort=sort)
+    # Lọc đồng thời theo tiêu đề hoặc tác giả chứa từ khóa
+    books_qs = Book.objects.all()
+    if query:
+        books_qs = books_qs.filter(
+            Q(title__icontains=query) | Q(author__icontains=query)
+        )
+    
+    if category:
+        books_qs = books_qs.filter(category__code__iexact=category)
+    if available_bool is not None:
+        if available_bool:
+            books_qs = books_qs.filter(quantity__gt=0)
+        else:
+            books_qs = books_qs.filter(quantity=0)
+    if sort:
+        books_qs = books_qs.order_by(sort)
+
     return render(request, "customer/book_search.html", {
-        "books": books_qs, "title": title, "category": category, 
+        "books": books_qs, "query": query, "category": category, 
         "available": available, "sort": sort
     })
 

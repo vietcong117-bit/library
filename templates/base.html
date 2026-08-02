@@ -474,7 +474,7 @@
             <div class="header-left"><h2 class="section-title">Thư Viện</h2></div>
             <div class="header-right">
                 <form class="search-box" action="{% url 'book_search' %}" method="get">
-                    <input type="text" name="title" placeholder="Tìm kiếm sách...">
+                    <input type="text" name="q" placeholder="Tìm theo tiêu đề hoặc tác giả...">
                 </form>
                 <div class="user-profile" style="position:relative; display:flex; align-items:center; gap:8px;">
                     {% if user.is_authenticated %}

@@ -15,6 +15,7 @@ from .models import Book, Borrow, Favorite
 from django.core.mail import send_mail
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models import Q
 # Mượn sách
 def borrow_book(user, book_id, days=14):
     try:
@@ -117,11 +118,14 @@ def get_filtered_books(category=None, available=None, sort=None):
     return qs
 
 # Tìm kiếm sách theo tiêu đề
-def search_books_by_title(title, category=None, available=None, sort=None):
-    if title:
-        qs = selector.search_books_by_title(title)
+def search_books_by_title(query, category=None, available=None, sort=None):
+    # Dùng Q để tìm kiếm trên cả 2 trường: tiêu đề (title) hoặc tác giả (author)
+    if query:
+        qs = Book.objects.filter(
+            Q(title__icontains=query) | Q(author__icontains=query)
+        )
     else:
-        qs = get_all_books()
+        qs = Book.objects.all()
 
     if category:
         qs = qs.filter(category=category)
