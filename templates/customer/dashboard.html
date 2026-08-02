@@ -2,7 +2,7 @@
 
 {% block content %}
 <style>
-    /* BỐ CỤC CHUNG */
+  
     .dashboard-container {
         max-width: 1200px;
         margin: 24px auto;
@@ -17,7 +17,7 @@
         align-items: start;
     }
 
-    /* CARD CHỨA NỘI DUNG */
+   
     .dashboard-card {
         background-color: #ffffff;
         border-radius: 12px;
@@ -36,7 +36,7 @@
         padding-bottom: 12px;
     }
 
-    /* DANH SÁCH SÁCH VỪA THÊM */
+   
     .book-list-compact {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -98,7 +98,7 @@
         text-overflow: ellipsis;
     }
 
-    /* DANH SÁCH SÁCH MƯỢN NHIỀU NHẤT */
+    
     .ranking-list {
         display: flex;
         flex-direction: column;
@@ -120,7 +120,7 @@
         background: #f1f5f9;
     }
 
-    /* Huy hiệu thứ hạng */
+   
     .ranking-item .rank {
         width: 28px;
         height: 28px;
@@ -135,10 +135,10 @@
         flex-shrink: 0;
     }
 
-    /* Hiệu ứng màu cho Top 1, 2, 3 */
-    .ranking-item:nth-child(1) .rank { background: #fef08a; color: #854d0e; } /* Vàng */
-    .ranking-item:nth-child(2) .rank { background: #e2e8f0; color: #334155; } /* Bạc */
-    .ranking-item:nth-child(3) .rank { background: #ffedd5; color: #9a3412; } /* Đồng */
+   
+    .ranking-item:nth-child(1) .rank { background: #fef08a; color: #854d0e; } 
+    .ranking-item:nth-child(2) .rank { background: #e2e8f0; color: #334155; } 
+    .ranking-item:nth-child(3) .rank { background: #ffedd5; color: #9a3412; } 
 
     .ranking-item .title {
         flex-grow: 1;
@@ -161,7 +161,7 @@
         flex-shrink: 0;
     }
 
-    /* TRẠNG THÁI TRỐNG */
+    
     .empty-text {
         color: #94a3b8;
         font-size: 0.95rem;
@@ -172,10 +172,10 @@
         grid-column: 1 / -1;
     }
 
-    /* RESPONSIVE (Dành cho màn hình điện thoại) */
+   
     @media (max-width: 768px) {
         .dashboard-grid {
-            grid-template-columns: 1fr; /* Chuyển thành 1 cột xếp chồng */
+            grid-template-columns: 1fr; 
         }
     }
 </style>
@@ -183,7 +183,7 @@
 <div class="dashboard-container">
     <div class="dashboard-grid">
         
-        <!-- CARD 1: SÁCH VỪA THÊM -->
+        
         <div class="dashboard-card">
             <h3>Sách vừa thêm</h3>
             <div class="book-list-compact">
@@ -205,7 +205,7 @@
             </div>
         </div>
 
-        <!-- CARD 2: SÁCH ĐƯỢC MƯỢN NHIỀU NHẤT -->
+       
         <div class="dashboard-card">
             <h3>Sách được mượn nhiều nhất</h3>
             <div class="ranking-list">

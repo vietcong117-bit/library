@@ -2,7 +2,6 @@
 
 {% block content %}
 <style>
-    /* BỐ CỤC CHUNG */
     .borrows-container {
         max-width: 1200px;
         margin: 24px auto;
@@ -18,14 +17,13 @@
         margin-bottom: 24px;
     }
 
-    /* LƯỚI HIỂN THỊ SÁCH MƯỢN */
     .borrows-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
         gap: 24px;
     }
 
-    /* THẺ SÁCH ĐÃ MƯỢN */
+
     .borrow-card {
         background-color: #ffffff;
         border-radius: 12px;
@@ -42,7 +40,7 @@
         box-shadow: 0 10px 20px rgba(0,0,0,0.12);
     }
 
-    /* THÂN THẺ (Ảnh & Thông tin) */
+    
     .borrow-card-body {
         display: flex;
         padding: 20px;
@@ -90,7 +88,7 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
-        margin-top: auto; /* Đẩy xuống dưới cùng của phần info */
+        margin-top: auto; 
     }
 
     .borrow-dates span {
@@ -98,7 +96,7 @@
         color: #1e293b;
     }
 
-    /* CHÂN THẺ (Trạng thái) */
+    
     .borrow-card-footer {
         padding: 14px 20px;
         background-color: #f8fafc;
@@ -108,7 +106,7 @@
         align-items: center;
     }
 
-    /* BADGE DUYỆT */
+   
     .status-badge {
         padding: 4px 10px;
         border-radius: 6px;
@@ -119,15 +117,15 @@
     .status-approved { background: #dcfce7; color: #166534; }
     .status-rejected { background: #fee2e2; color: #991b1b; }
 
-    /* TRẠNG THÁI TRẢ SÁCH */
+    
     .return-status {
         font-size: 0.85rem;
         font-weight: 700;
     }
-    .status-not-returned { color: #ea580c; } /* Màu cam */
-    .status-returned { color: #059669; }     /* Màu xanh lá */
+    .status-not-returned { color: #ea580c; }
+    .status-returned { color: #059669; }     
 
-    /* TRẠNG THÁI TRỐNG */
+    
     .empty-text {
         color: #94a3b8;
         font-size: 1rem;
@@ -148,7 +146,7 @@
         {% for b in borrows %}
         <div class="borrow-card">
             
-            <!-- Phần thân: Ảnh và Thông tin sách -->
+          
             <div class="borrow-card-body">
                 <img class="borrow-img" 
                     src="{% if b.book.image %}{{ b.book.image.url }}{% else %}https://via.placeholder.com/80x110{% endif %}" 
@@ -165,7 +163,7 @@
                 </div>
             </div>
 
-            <!-- Phần chân: Trạng thái duyệt và Trạng thái trả -->
+           
             <div class="borrow-card-footer">
                 <div>
                     {% if b.status == 'pending' %}
