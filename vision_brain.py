@@ -4,16 +4,16 @@ import numpy as np
 import tensorflow as tf
 import easyocr
 import re
+from project_paths import MODELS_DIR
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "book_cover_cnn.h5")
+MODEL_PATH = str(MODELS_DIR / "book_cover_cnn.h5")
 
 # Khởi tạo mô hình CNN nếu file tồn tại
 model = None
 if os.path.exists(MODEL_PATH):
     model = tf.keras.models.load_model(MODEL_PATH)
 
-CATEGORIES = ["tech", "fiction", "selfhelp", "business"]
-
+CATEGORIES = ["tech", "fiction", "math", "literature", "history", "comic", "business", "food", "religion", "manga", "sport"] 
 # Khởi tạo EasyOCR (Sử dụng GPU nếu có, không có sẽ fallback về CPU)
 reader = easyocr.Reader(['vi', 'en'], gpu=tf.test.is_built_with_cuda())
 
@@ -60,13 +60,12 @@ def predict_book_category(image_path, threshold=0.6):
         
         # Chuyển BGR sang RGB tương thích với lúc train
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (128, 128))
+        img = cv2.resize(img, (224, 224)) 
         img = np.expand_dims(img, axis=0) / 255.0
 
         prediction = model.predict(img, verbose=0)
         max_score = np.max(prediction)
         index = np.argmax(prediction)
-
         if max_score < threshold:
             return None
 

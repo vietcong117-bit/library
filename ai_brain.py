@@ -4,10 +4,10 @@ import os
 import random
 from underthesea import word_tokenize
 from dataset import RESPONSES
+from project_paths import CHATBOT_MODEL_PATH, VECTORIZER_PATH
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "chatbot_model.pkl")
-VEC_PATH = os.path.join(BASE_DIR, "vectorizer.pkl")
+MODEL_PATH = str(CHATBOT_MODEL_PATH)
+VEC_PATH = str(VECTORIZER_PATH)
 
 
 CONFIDENCE_THRESHOLD = 0.3

@@ -87,17 +87,27 @@ def books(request):
 
     book_list = Book.objects.all()
 
+    # 1. Lọc theo thể loại (giữ nguyên logic đang hoạt động tốt của bạn)
     if category_slug:
         book_list = book_list.filter(category__code__iexact=category_slug)
 
+    # 2. Lọc theo trạng thái còn/hết sách (giữ nguyên)
     if available:
         if available == 'true':
             book_list = book_list.filter(quantity__gt=0)
         elif available == 'false':
             book_list = book_list.filter(quantity=0)
 
+    # 3. Sắp xếp (Thêm đoạn ánh xạ 'year' -> 'published_year' ở đây để tránh FieldError)
     if sort:
-        book_list = book_list.order_by(sort)
+        if sort == 'year':
+            sort_field = 'published_year'
+        elif sort == '-year':
+            sort_field = '-published_year'
+        else:
+            sort_field = sort
+            
+        book_list = book_list.order_by(sort_field)
 
     categories = Category.objects.all()
 
@@ -557,6 +567,7 @@ def admin_category_add(request):
 import re
 
 import unicodedata
+from PIL import Image
 
 def remove_accents(input_str):
     """Hàm chuyển chuỗi tiếng Việt có dấu thành không dấu (VD: 'Chí Phèo' -> 'chi pheo')"""
@@ -572,6 +583,15 @@ def chat_view(request):
     if request.method == 'POST':
         current_intent = "nhan_dien_anh"
 
+        # --- BẮT ĐẦU ĐOẠN THÊM MỚI ---
+    # Chặn người chưa đăng nhập sử dụng chatbot
+    if not request.user.is_authenticated:
+        return JsonResponse({'reply': 'Vui lòng đăng nhập để sử dụng chatbot.'}, status=401)
+    # --- KẾT THÚC ĐOẠN THÊM MỚI ---
+
+    if request.method == 'POST':
+        current_intent = "nhan_dien_anh"
+
         # --- A. XỬ LÝ ẢNH BÌA SÁCH ---
         if request.FILES.get('image'):
             image = request.FILES['image']
@@ -584,7 +604,14 @@ def chat_view(request):
                 with open(temp_path, 'wb+') as f:
                     for chunk in image.chunks(): 
                         f.write(chunk)
-                
+                try:
+                    img_pil = Image.open(temp_path).convert('RGB')
+                    temp_path_jpg = temp_path + ".jpg"
+                    img_pil.save(temp_path_jpg, "JPEG")
+                    temp_path = temp_path_jpg # Dùng đường dẫn file .jpg mới cho các bước sau
+                except Exception as e:
+                    print(f"⚠️ Lỗi chuyển đổi ảnh: {e}")
+
                 sach_goi_y = None
                 
                 ## 1. Đọc OCR chữ trên ảnh bìa
@@ -597,26 +624,26 @@ def chat_view(request):
                     
                     # Trích xuất các số nguyên vẹn đứng độc lập (Loại bỏ số dính chữ như '8Mg')
                     ocr_numbers = set(re.findall(r'\b\d+\b', ocr_clean))
-
                     best_match = None
                     highest_score = 0
 
                     for book in Book.objects.all():
-                        # Chuẩn hóa tên sách trong DB: Bỏ dấu tiếng Việt
                         title_clean = remove_accents(book.title)
                         book_numbers = set(re.findall(r'\b\d+\b', title_clean))
-
-                        # 🛑 RÀNG BUỘC SỐ NGHIÊM NGẶT (Dành cho sách giáo khoa/theo tập):
-                        if book_numbers and not book_numbers.issubset(ocr_numbers):
-                            continue
-
-                        # So sánh độ tương đồng chuỗi sau khi đã bỏ dấu
+                        
+                        # So khớp độ tương đồng
                         score_set = fuzz.token_set_ratio(title_clean, ocr_clean)
                         score_partial = fuzz.partial_ratio(title_clean, ocr_clean)
                         score = max(score_set, score_partial)
 
-                        # Ngưỡng khớp tối thiểu 75%
-                        if score > highest_score and score >= 75:
+                        # 🛑 RÀNG BUỘC SỐ CHẶT CHẼ ĐỂ TRÁNH NHẦM LẪN SÁCH NGOÀI
+                        if book_numbers and ocr_numbers:
+                            # Nếu khác số lớp/tập (VD: 5 khác 8), trừ điểm hoặc bỏ qua ngay lập tức
+                            if not book_numbers.intersection(ocr_numbers):
+                                continue
+
+                        # Nâng ngưỡng nhận diện sách trong kho lên 85% để ảnh ngoài không bị bắt ép khớp sai
+                        if score > highest_score and score >= 85:
                             highest_score = score
                             best_match = book
 

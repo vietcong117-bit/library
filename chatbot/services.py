@@ -2,7 +2,7 @@
 # Do t nghĩ là chỉ gọi không thì có thể gộp selector.py vào luôn
 # Nhưng t nghĩ nếu có xử lí thêm sau khi gọi nên tách riêng ra cho dễ quản lí
 # còn nếu không thì thôi gộp vào luôn cũng được, tùy mấy bạn
-# nguồn trương hữu an
+
 
 from .selector import get_all_books
 from .selector import get_book_by_id
@@ -12,7 +12,9 @@ from . import selector
 from django.db import transaction
 from django.db.models import Q
 from .models import Book, Borrow, Favorite
-
+from django.core.mail import send_mail
+from django.utils import timezone
+from datetime import timedelta
 # Mượn sách
 def borrow_book(user, book_id, days=14):
     try:
@@ -150,3 +152,37 @@ def search_books_by_title(title, category=None, available=None, sort=None):
         qs = qs.order_by(sort_map[sort])
 
     return qs
+def process_due_date_reminders(days_before=2):
+    """
+    Quét các phiếu mượn sắp đến hạn (cách ngày hiện tại `days_before` ngày) hoặc quá hạn
+    """
+    today = timezone.now().date()
+    
+    target_due_date = today + timedelta(days=days_before)
+    upcoming_borrows = Borrow.objects.filter(due_date=target_due_date, return_date__isnull=True).select_related('user', 'book')
+    
+    count_sent = 0
+    for borrow in upcoming_borrows:
+        if borrow.user.email:
+            send_mail(
+                subject='[Thư viện] Nhắc nhở hạn trả sách',
+                message=f'Chào {borrow.user.username},\n\nCuốn sách "{borrow.book.title}" của bạn sẽ đến hạn trả vào ngày {borrow.due_date}. Vui lòng sắp xếp trả sách đúng hạn nhé!',
+                from_email=None,
+                recipient_list=[borrow.user.email],
+                fail_silently=True,
+            )
+            count_sent += 1
+
+    overdue_borrows = Borrow.objects.filter(due_date__lt=today, return_date__isnull=True).select_related('user', 'book')
+    for borrow in overdue_borrows:
+        if borrow.user.email:
+            send_mail(
+                subject='[Thư viện] Thông báo quá hạn trả sách',
+                message=f'Chào {borrow.user.username},\n\nCuốn sách "{borrow.book.title}" của bạn đã quá hạn trả từ ngày {borrow.due_date}. Vui lòng mang trả sách sớm cho thư viện!',
+                from_email=None,
+                recipient_list=[borrow.user.email],
+                fail_silently=True,
+            )
+            count_sent += 1
+
+    return f"Đã gửi thành công {count_sent} thông báo (Sắp đến hạn: {days_before} ngày tới & Quá hạn)."

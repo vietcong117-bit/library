@@ -530,8 +530,9 @@
 </div>
 
 <script>
-const CHAT_STORAGE_KEY = 'library_chat_history';
-const CHAT_STATE_KEY = 'library_chat_is_open'; // Thêm key lưu trạng thái bật/tắt
+const currentUsername = "{{ user.username|default:'guest' }}";
+const CHAT_STORAGE_KEY = `library_chat_history_${currentUsername}`;
+const CHAT_STATE_KEY = `library_chat_is_open_${currentUsername}`;
 
 // Lấy CSRF token từ cookie
 function getCookie(name) {
