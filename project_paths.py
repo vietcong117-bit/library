@@ -2,7 +2,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATASET_ROOT = PROJECT_ROOT / "dataset"
-TRAIN_DATA_DIR = DATASET_ROOT / "train"
+TRAIN_DATA_DIR = PROJECT_ROOT / "media" / "dataset" / "train"
 MODELS_DIR = PROJECT_ROOT / "models"
 MEDIA_ROOT = PROJECT_ROOT / "media"
 BOOK_CSV_PATH = PROJECT_ROOT / "book32-listing.csv"

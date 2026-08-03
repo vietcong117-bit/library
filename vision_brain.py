@@ -13,7 +13,7 @@ model = None
 if os.path.exists(MODEL_PATH):
     model = tf.keras.models.load_model(MODEL_PATH)
 
-CATEGORIES = ["tech", "fiction", "math", "literature", "history", "comic", "business", "food", "religion", "manga", "sport"] 
+CATEGORIES = ["art", "tech", "fiction", "math", "literature", "history", "comic", "business", "food", "religion", "sport"] 
 # Khởi tạo EasyOCR (Sử dụng GPU nếu có, không có sẽ fallback về CPU)
 reader = easyocr.Reader(['vi', 'en'], gpu=tf.test.is_built_with_cuda())
 

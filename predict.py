@@ -16,7 +16,7 @@ with open(MODELS_DIR / "categories.json", "r", encoding="utf-8") as f:
 print(f"🏷️ Nhãn chuẩn đang dùng: {class_names}")
 
 # 2. Lấy đường dẫn ảnh từ Terminal hoặc mặc định
-img_path = str(MEDIA_ROOT / 'image' / '0590331264_6SoMxSi.jpg')
+img_path = str(MEDIA_ROOT / 'temp' / 's-l1600.webp')
 if len(sys.argv) > 1:
     img_path = sys.argv[1]
 
