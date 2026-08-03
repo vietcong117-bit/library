@@ -246,8 +246,9 @@
                 {% if book.category %}
                     <span class="badge badge-category">{{ book.category.name }}</span>
                 {% endif %}
-                {% if book.available > 0 %}
-                    <span class="badge badge-success">Còn {{ book.available }} cuốn</span>
+
+                {% if book.quantity > 0 %}
+                    <span class="badge badge-success">Còn {{ book.quantity }} cuốn</span>
                 {% else %}
                     <span class="badge badge-danger">Tạm hết sách</span>
                 {% endif %}
@@ -256,7 +257,7 @@
             <div class="action-buttons">
                 <form method="post" action="{% url 'book_borrow' book.id %}" style="margin: 0;">
                     {% csrf_token %}
-                    <button class="btn btn-primary" {% if book.available <= 0 %}disabled{% endif %}>
+                    <button class="btn btn-primary" {% if book.quantity <= 0 %}disabled{% endif %}>
                         Mượn ngay
                     </button>
                 </form>

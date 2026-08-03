@@ -8,13 +8,14 @@ category_mapping = {
     "Business & Money": "business",
     "Computers & Technology": "tech",
     "History": "history",
-    "Literature & Fiction": "fiction", 
+    "Literature & Fiction": "literature", 
     "Science Fiction & Fantasy": "fiction",
     "Science & Math": "math",
     "Cookbooks, Food & Wine": "food",
     "Sports & Outdoors": "sport",
     "Religion & Spirituality": "religion",
     "Comics & Graphic Novels": "comic",
+    "Arts & Photography": "art",
 }
 
 SOURCE_DIR = "book-dataset/images"  # Thư mục chứa ảnh vừa tải
