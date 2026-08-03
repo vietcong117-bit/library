@@ -41,7 +41,7 @@ def get_chatbot_response(user_message):
 STOPWORDS_SEARCH = {
     "tìm", "kiếm", "sách", "cuốn", "truyện", "quyển", "giúp", "mình",
     "muốn", "hỏi", "cho", "về", "có", "là", "tên", "đọc", "mượn",
-    "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ", "?", "!", ".", ",", "với"
+    "vậy", "không", "bạn", "ơi", "nhé", "giùm", "dùm", "ạ", "?", "!", ".", ",", "với","tôi","tớ"
 }
 
 MIN_QUERY_LENGTH = 2
@@ -83,7 +83,7 @@ STOPWORDS_AUTHOR = {
     "giả", "tác_giả", "của", "do", "viết", "bởi", "cho", "mình", "muốn",
     "xem", "hỏi", "có", "không", "là", "gì", "này", "những", "các",
     "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ", "của", "bạn", "?", "!", ".", ",", "với",
-    "được","bạn"
+    "được","tôi","tớ"
 }
 
 
@@ -117,7 +117,7 @@ STOPWORDS_CATEGORY = {
     "tìm", "sách", "cuốn", "truyện", "quyển", "thể", "loại", "thể_loại",
     "thuộc", "cho", "mình", "muốn", "xem", "hỏi", "có", "không", "là",
     "gì", "này", "những", "các", "liệt", "kê", "liệt_kê", "giúp", "nào",
-    "nhé", "ạ", "thuộc", "?", "!", ".", ",", "với", "được","bạn"
+    "nhé", "ạ", "thuộc", "?", "!", ".", ",", "với", "được","bạn","tôi","tớ"
 }
 
 
