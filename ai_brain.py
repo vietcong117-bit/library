@@ -139,16 +139,7 @@ def extract_category_query(user_message: str) -> str:
     return query
 
 
-# Category giờ đã lưu SẴN bằng tên tiếng Việt mô tả rõ ràng trong DB
-# (vd: "Công nghệ thông tin", "Văn học", "Tiểu thuyết / Viễn tưởng"...),
-# nên KHÔNG cần "dịch" nữa — chỉ cần so khớp trực tiếp (substring,
-# không phân biệt hoa/thường) là đủ cho hầu hết trường hợp.
-#
-# CATEGORY_ALIASES giờ chỉ giữ vai trò PHỤ: thêm vài từ đồng nghĩa/viết tắt
-# người dùng hay gõ nhưng không phải substring trực tiếp của tên thể loại
-# thật (vd: "cntt" không phải substring của "Công nghệ thông tin" theo
-# nghĩa đen, "manga" cần khớp với "(Manga)"...). Mỗi khi bạn thêm thể loại
-# mới vào DB, thường KHÔNG cần sửa gì ở đây — so khớp trực tiếp đã đủ.
+
 CATEGORY_ALIASES = {
     "cntt": ["công nghệ thông tin"],
     "it": ["công nghệ thông tin"],
@@ -166,14 +157,7 @@ CATEGORY_ALIASES = {
 
 
 def find_books_by_category(query: str, book_queryset):
-    """
-    Tìm TẤT CẢ sách thuộc thể loại `query`, không phân biệt hoa/thường.
-
-    Vì category trong DB đã lưu tên tiếng Việt mô tả (không phải mã tiếng
-    Anh nữa), phép so khớp CHÍNH là substring trực tiếp giữa từ khóa người
-    dùng gõ và tên thể loại thật. CATEGORY_ALIASES chỉ bổ sung thêm vài
-    biến thể/viết tắt hay gặp, KHÔNG thay thế từ khóa gốc như bản cũ.
-    """
+ 
     query_lower = query.lower()
     extra_aliases = CATEGORY_ALIASES.get(query_lower, [])
     match_candidates = [query_lower] + extra_aliases
@@ -181,7 +165,7 @@ def find_books_by_category(query: str, book_queryset):
     try:
         book_queryset = book_queryset.select_related("category")
     except Exception:
-        pass  # category là CharField (không phải FK) thì select_related không cần thiết
+        pass  
 
     result = []
     for book in book_queryset:
