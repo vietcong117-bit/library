@@ -82,7 +82,7 @@ STOPWORDS_AUTHOR = {
     "tìm", "sách", "cuốn", "truyện", "quyển", "tác", "phẩm", "tác_phẩm",
     "giả", "tác_giả", "của", "do", "viết", "bởi", "cho", "mình", "muốn",
     "xem", "hỏi", "có", "không", "là", "gì", "này", "những", "các",
-    "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ", "của", "bạn", "?", "!", ".", ",", "với".
+    "liệt", "kê", "liệt_kê", "giúp", "nào", "nhé", "ạ", "của", "bạn", "?", "!", ".", ",", "với",
     , "được","bạn"
 }
 
